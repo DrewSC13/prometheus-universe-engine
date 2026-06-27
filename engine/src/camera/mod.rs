@@ -87,7 +87,7 @@ fn free_camera_movement(
 fn free_camera_mouse_look(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     settings: Res<FreeCameraSettings>,
-    mut mouse_motion_events: EventReader<MouseMotion>,
+    mut mouse_motion_events: MessageReader<MouseMotion>,
     mut query: Query<&mut Transform, With<FreeCamera>>,
 ) {
     if !mouse_buttons.pressed(MouseButton::Right) {
