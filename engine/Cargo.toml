@@ -1,0 +1,18 @@
+[package]
+name = "prometheus_engine"
+version = "0.1.0"
+edition = "2021"
+description = "Prometheus Universe Engine: scalable 3D astronomical simulation engine."
+license = "MIT"
+repository = "https://github.com/DrewSC13/prometheus-universe-engine"
+
+[dependencies]
+bevy = "0.17"
+bevy_egui = "0.35"
+glam = "0.29"
+nalgebra = "0.33"
+serde = { version = "1.0", features = ["derive"] }
+bytemuck = { version = "1.20", features = ["derive"] }
+memmap2 = "0.9"
+async-channel = "2.3"
+tracy-client = "0.17"

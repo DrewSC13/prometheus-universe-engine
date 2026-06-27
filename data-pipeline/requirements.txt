@@ -1,0 +1,15 @@
+numpy
+pandas
+polars
+pyarrow
+duckdb
+astropy
+astroquery
+spiceypy
+scipy
+requests
+tqdm
+pydantic
+click
+rich
+matplotlib

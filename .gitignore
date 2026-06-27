@@ -1,0 +1,47 @@
+# Rust
+target/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.local
+
+# System
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Secrets
+git-token
+*.key
+*.pem
+*.token
+
+# Heavy astronomy data
+data/gaia/raw/*
+data/gaia/parquet/*
+data/gaia/runtime_bin/*
+data/solar_system/*
+data/galaxies/*
+*.bin
+*.parquet
+*.fits
+*.csv
+
+# Keep empty folders
+!data/gaia/raw/.gitkeep
+!data/gaia/parquet/.gitkeep
+!data/gaia/runtime_bin/.gitkeep
+!data/solar_system/.gitkeep
+!data/galaxies/.gitkeep
+
+# Logs and captures
+*.log
+*.trace
+screenshots/
