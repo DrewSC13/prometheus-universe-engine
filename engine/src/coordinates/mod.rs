@@ -1,8 +1,14 @@
-use glam::{DVec3, Vec3};
+use bevy::math::{DVec3, Vec3};
+use bevy::prelude::Component;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GlobalPosition {
     pub meters_from_origin: DVec3,
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+pub struct GlobalPositionComponent {
+    pub position: GlobalPosition,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -18,6 +24,14 @@ pub struct LocalRenderPosition {
     pub position: Vec3,
 }
 
+impl Default for GlobalPositionComponent {
+    fn default() -> Self {
+        Self {
+            position: GlobalPosition::ZERO,
+        }
+    }
+}
+
 impl GlobalPosition {
     pub const ZERO: Self = Self {
         meters_from_origin: DVec3::ZERO,
@@ -31,6 +45,12 @@ impl GlobalPosition {
 
     pub fn distance_to(self, other: Self) -> f64 {
         self.meters_from_origin.distance(other.meters_from_origin)
+    }
+
+    pub fn translated_by_meters(self, delta: DVec3) -> Self {
+        Self {
+            meters_from_origin: self.meters_from_origin + delta,
+        }
     }
 }
 
@@ -68,5 +88,13 @@ mod tests {
         let local = to_local_position(object, camera);
 
         assert_eq!(local.position.x, 1_000.0);
+    }
+
+    #[test]
+    fn translates_global_position_in_meters() {
+        let position = GlobalPosition::new_meters(1.0, 2.0, 3.0);
+        let moved = position.translated_by_meters(DVec3::new(10.0, 20.0, 30.0));
+
+        assert_eq!(moved, GlobalPosition::new_meters(11.0, 22.0, 33.0));
     }
 }
