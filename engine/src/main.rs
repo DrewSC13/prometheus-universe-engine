@@ -6,6 +6,9 @@ use prometheus_engine::render::solar_system::SolarSystemRenderPlugin;
 use prometheus_engine::time::{SimulationClock, SimulationTime};
 
 fn main() {
+    let mut simulation_time = SimulationTime::j2000();
+    simulation_time.set_time_scale(50_000.0);
+
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins((
@@ -13,7 +16,7 @@ fn main() {
             FloatingOriginRuntimePlugin,
             SolarSystemRenderPlugin,
         ))
-        .insert_resource(SimulationClock(SimulationTime::j2000()))
+        .insert_resource(SimulationClock(simulation_time))
         .add_systems(Startup, setup)
         .add_systems(Update, advance_simulation_time)
         .run();
@@ -24,7 +27,7 @@ fn setup(mut commands: Commands) {
         Camera3d::default(),
         FreeCamera,
         GlobalPositionComponent::default(),
-        Transform::from_xyz(0.0, 10.0, 40.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0.0, 12.0, 42.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     commands.spawn((
@@ -36,7 +39,7 @@ fn setup(mut commands: Commands) {
     ));
 
     info!("Prometheus Universe Engine iniciado.");
-    info!("Fase 0: render inicial Sol-Tierra-Luna con cámara libre y Floating Origin.");
+    info!("Fase 0: escala educativa Sol-Tierra-Luna con cámara libre y Floating Origin.");
 }
 
 fn advance_simulation_time(time: Res<Time>, mut simulation_clock: ResMut<SimulationClock>) {
