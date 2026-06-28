@@ -71,3 +71,25 @@ Comportamiento:
 - los cuerpos pequeños conservan un padding mínimo para que el indicador siga siendo visible.
 
 Este corte todavía no implementa picking con mouse.
+
+
+## Cuarto corte: enfocar cámara en el cuerpo seleccionado
+
+Se añade navegación básica del Body Inspector.
+
+Control nuevo:
+
+- `G`: enfoca la cámara en el cuerpo seleccionado.
+
+Comportamiento:
+
+- si hay cuerpo seleccionado, la cámara se posiciona cerca del cuerpo y mira hacia él;
+- si no hay selección activa, no mueve la cámara;
+- el sistema conserva un mínimo de distancia para cuerpos pequeños;
+- el sistema limita la distancia máxima para cuerpos grandes.
+
+Implementación:
+
+- `engine/src/interaction/focus.rs`
+- `BodyFocusPlugin`
+- `solar_body_visual_position` como wrapper público seguro para obtener posiciones visuales del render solar.

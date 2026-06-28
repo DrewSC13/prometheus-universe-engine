@@ -259,3 +259,11 @@ fn selected_body_indicator_scale_exceeds_body_radius() {
 fn selected_body_indicator_scale_keeps_small_bodies_visible() {
     assert!(super::selected_body_indicator_scale(0.1) >= 0.48);
 }
+
+#[test]
+fn solar_body_visual_position_exposes_sun_position() {
+    assert_eq!(
+        super::solar_body_visual_position(super::BodyId::Sun, 0.0),
+        Some(super::Vec3::ZERO)
+    );
+}

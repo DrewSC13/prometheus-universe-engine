@@ -111,7 +111,7 @@ fn update_simulation_hud(
 
         if hud_visibility.compact {
             text.0 = format!(
-                "Prometheus Universe Engine | Fase 2 Body Inspector | JD {:.2} | x{:.0} | {} | pausa: {} | seleccion: {} | H HUD | M modo",
+                "Prometheus Universe Engine | Fase 2 Body Inspector | JD {:.2} | x{:.0} | {} | pausa: {} | seleccion: {} | G enfocar | H HUD | M modo",
                 simulation_time.jd_tdb,
                 simulation_time.time_scale,
                 direction,
@@ -151,6 +151,7 @@ fn update_simulation_hud(
              O = orbitas\n\
              N = siguiente cuerpo\n\
              P = cuerpo anterior\n\
+             G = enfocar seleccion\n\
              Escape = limpiar seleccion\n\
              C = vista general\n\
              V = vista lejana\n\
