@@ -22,6 +22,7 @@ fn main() {
             SimulationHudPlugin,
         ))
         .insert_resource(SimulationClock(simulation_time))
+        .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.0)))
         .add_systems(Startup, setup)
         .add_systems(Update, advance_simulation_time)
         .run();
@@ -37,7 +38,7 @@ fn setup(mut commands: Commands) {
 
     commands.spawn((
         DirectionalLight {
-            illuminance: 5_000.0,
+            illuminance: 1_200.0,
             ..default()
         },
         Transform::from_xyz(5.0, 8.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -46,6 +47,7 @@ fn setup(mut commands: Commands) {
     info!("Prometheus Universe Engine iniciado.");
     info!("Fase 1: Sistema Solar educativo dirigido por catálogo.");
     info!("Controles: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
+    info!("Render: fondo espacial negro, starfield procedural y polish visual espacial.");
 }
 
 fn advance_simulation_time(time: Res<Time>, mut simulation_clock: ResMut<SimulationClock>) {
