@@ -133,3 +133,26 @@ Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
 
 `mod orbits;`
 `use self::orbits::*;`
+
+
+## Séptimo corte seguro: Labels
+
+Se extrajo la lógica visual de etiquetas a:
+
+`engine/src/render/solar_system/labels.rs`
+
+Incluye:
+
+- recurso `LabelVisibilityMode`;
+- componente visual `SolarBodyLabel`;
+- controles de teclado para etiquetas;
+- creación de labels;
+- actualización de labels hacia cámara;
+- visibilidad de labels;
+- helpers de tamaño, color y offset;
+- helper de selección de cuerpos principales.
+
+Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
+
+`mod labels;`
+`use self::labels::*;`
