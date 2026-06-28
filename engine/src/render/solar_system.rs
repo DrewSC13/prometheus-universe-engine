@@ -16,6 +16,37 @@ const SATELLITE_ORBIT_MARKERS: usize = 64;
 const PLANET_ORBIT_MARKER_RADIUS: f32 = 0.025;
 const SATELLITE_ORBIT_MARKER_RADIUS: f32 = 0.020;
 
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LabelVisibilityMode {
+    MajorOnly,
+    All,
+    None,
+}
+
+impl Default for LabelVisibilityMode {
+    fn default() -> Self {
+        Self::MajorOnly
+    }
+}
+
+impl LabelVisibilityMode {
+    pub fn next(self) -> Self {
+        match self {
+            Self::MajorOnly => Self::All,
+            Self::All => Self::None,
+            Self::None => Self::MajorOnly,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::MajorOnly => "major",
+            Self::All => "all",
+            Self::None => "none",
+        }
+    }
+}
+
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SolarBodyVisual {
     pub id: BodyId,
@@ -37,13 +68,16 @@ pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_solar_system_visuals)
+        app.insert_resource(LabelVisibilityMode::default())
+            .add_systems(Startup, spawn_solar_system_visuals)
             .add_systems(
                 Update,
                 (
+                    keyboard_label_controls,
                     update_solar_system_visuals,
                     update_orbit_markers,
                     update_solar_body_labels,
+                    apply_label_visibility,
                 ),
             );
     }
@@ -92,7 +126,7 @@ fn spawn_solar_system_visuals(
             },
         ));
 
-        spawn_label(&mut commands, body.name, body.id);
+        spawn_label(&mut commands, body.name, body.id, label_font_size(body));
 
         if let Some(orbit) = body.orbit {
             let total = orbit_marker_count(orbit);
@@ -129,6 +163,16 @@ fn spawn_solar_system_visuals(
     ));
 }
 
+fn keyboard_label_controls(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut label_visibility_mode: ResMut<LabelVisibilityMode>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyL) {
+        *label_visibility_mode = label_visibility_mode.next();
+        info!("Label visibility mode: {}", label_visibility_mode.as_str());
+    }
+}
+
 fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
     match body.class {
         BodyClass::Star => LinearRgba::rgb(1.0, 0.55, 0.08),
@@ -136,15 +180,25 @@ fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
     }
 }
 
-fn spawn_label(commands: &mut Commands, text: &'static str, id: BodyId) {
+fn label_font_size(body: &CelestialBodyDefinition) -> f32 {
+    match body.class {
+        BodyClass::Star => 24.0,
+        BodyClass::GasGiant | BodyClass::IceGiant => 18.0,
+        BodyClass::TerrestrialPlanet => 16.0,
+        BodyClass::NaturalSatellite => 14.0,
+    }
+}
+
+fn spawn_label(commands: &mut Commands, text: &'static str, id: BodyId, font_size: f32) {
     commands.spawn((
         Text2d::new(text),
         TextFont {
-            font_size: 18.0,
+            font_size,
             ..default()
         },
         TextColor(Color::WHITE),
         Transform::from_xyz(0.0, 0.0, 0.0),
+        Visibility::Visible,
         SolarBodyLabel { id },
     ));
 }
@@ -225,6 +279,40 @@ fn update_solar_body_labels(
     }
 }
 
+fn apply_label_visibility(
+    label_visibility_mode: Res<LabelVisibilityMode>,
+    mut query: Query<(&SolarBodyLabel, &mut Visibility)>,
+) {
+    for (label, mut visibility) in query.iter_mut() {
+        let visible = match *label_visibility_mode {
+            LabelVisibilityMode::MajorOnly => is_major_body_label(label.id),
+            LabelVisibilityMode::All => true,
+            LabelVisibilityMode::None => false,
+        };
+
+        *visibility = if visible {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
+    }
+}
+
+fn is_major_body_label(id: BodyId) -> bool {
+    matches!(
+        id,
+        BodyId::Sun
+            | BodyId::Mercury
+            | BodyId::Venus
+            | BodyId::Earth
+            | BodyId::Mars
+            | BodyId::Jupiter
+            | BodyId::Saturn
+            | BodyId::Uranus
+            | BodyId::Neptune
+    )
+}
+
 fn body_visual_position(id: BodyId, days_since_j2000: f64) -> Option<Vec3> {
     let body = SOLAR_SYSTEM_BODIES.iter().find(|body| body.id == id)?;
 
@@ -269,5 +357,31 @@ fn orbit_marker_radius(orbit: OrbitDefinition) -> f32 {
         PLANET_ORBIT_MARKER_RADIUS
     } else {
         SATELLITE_ORBIT_MARKER_RADIUS
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn label_visibility_mode_cycles_in_expected_order() {
+        assert_eq!(
+            LabelVisibilityMode::MajorOnly.next(),
+            LabelVisibilityMode::All
+        );
+        assert_eq!(LabelVisibilityMode::All.next(), LabelVisibilityMode::None);
+        assert_eq!(
+            LabelVisibilityMode::None.next(),
+            LabelVisibilityMode::MajorOnly
+        );
+    }
+
+    #[test]
+    fn major_labels_include_planets_but_not_moon() {
+        assert!(is_major_body_label(BodyId::Sun));
+        assert!(is_major_body_label(BodyId::Earth));
+        assert!(is_major_body_label(BodyId::Jupiter));
+        assert!(!is_major_body_label(BodyId::Moon));
     }
 }
