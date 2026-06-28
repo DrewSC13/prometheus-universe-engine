@@ -156,3 +156,26 @@ Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
 
 `mod labels;`
 `use self::labels::*;`
+
+
+## Octavo corte seguro: Superficies planetarias
+
+Se extrajo la lógica visual genérica de superficies planetarias a:
+
+`engine/src/render/solar_system/planet_surface.rs`
+
+Incluye:
+
+- constantes de detalles superficiales;
+- constantes de bandas planetarias;
+- componentes visuales de detalles y bandas;
+- spawn de detalles superficiales;
+- actualización de detalles superficiales;
+- actualización de bandas planetarias;
+- helpers de selección de planetas con detalle;
+- helpers de escala, dirección, material y bandas.
+
+Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
+
+`mod planet_surface;`
+`use self::planet_surface::{...};`
