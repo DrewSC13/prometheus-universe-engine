@@ -1,3 +1,5 @@
+use bevy::prelude::Resource;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Epoch {
     J2000,
@@ -18,6 +20,15 @@ pub struct SimulationTime {
     pub direction: TimeDirection,
 }
 
+#[derive(Resource, Debug, Clone, Copy)]
+pub struct SimulationClock(pub SimulationTime);
+
+impl Default for SimulationClock {
+    fn default() -> Self {
+        Self(SimulationTime::j2000())
+    }
+}
+
 impl SimulationTime {
     pub const J2000_JD_TDB: f64 = 2_451_545.0;
     pub const SECONDS_PER_DAY: f64 = 86_400.0;
@@ -30,6 +41,10 @@ impl SimulationTime {
             paused: false,
             direction: TimeDirection::Forward,
         }
+    }
+
+    pub fn days_since_j2000(self) -> f64 {
+        self.jd_tdb - Self::J2000_JD_TDB
     }
 
     pub fn pause(&mut self) {
@@ -80,10 +95,17 @@ mod tests {
     }
 
     #[test]
+    fn reports_zero_days_since_j2000_at_start() {
+        let time = SimulationTime::j2000();
+        assert_eq!(time.days_since_j2000(), 0.0);
+    }
+
+    #[test]
     fn advances_one_day_at_normal_scale() {
         let mut time = SimulationTime::j2000();
         time.tick_seconds(SimulationTime::SECONDS_PER_DAY);
         assert_eq!(time.jd_tdb, SimulationTime::J2000_JD_TDB + 1.0);
+        assert_eq!(time.days_since_j2000(), 1.0);
     }
 
     #[test]
