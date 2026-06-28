@@ -16,6 +16,11 @@ const SATELLITE_ORBIT_MARKERS: usize = 64;
 const PLANET_ORBIT_MARKER_RADIUS: f32 = 0.025;
 const SATELLITE_ORBIT_MARKER_RADIUS: f32 = 0.020;
 
+const SATURN_RING_MARKERS: usize = 192;
+const SATURN_RING_INNER_RADIUS: f32 = 1.65;
+const SATURN_RING_OUTER_RADIUS: f32 = 2.35;
+const SATURN_RING_MARKER_RADIUS: f32 = 0.025;
+
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LabelVisibilityMode {
     MajorOnly,
@@ -95,6 +100,14 @@ pub struct OrbitMarkerVisual {
     pub total: usize,
 }
 
+#[derive(Component, Debug, Clone, Copy)]
+pub struct RingMarkerVisual {
+    pub parent_body_id: BodyId,
+    pub index: usize,
+    pub total: usize,
+    pub ring_radius: f32,
+}
+
 pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
@@ -109,6 +122,7 @@ impl Plugin for SolarSystemRenderPlugin {
                     keyboard_orbit_controls,
                     update_solar_system_visuals,
                     update_orbit_markers,
+                    update_ring_markers,
                     update_solar_body_labels,
                     apply_label_visibility,
                     apply_orbit_visibility,
@@ -143,6 +157,12 @@ fn spawn_solar_system_visuals(
         ..default()
     });
 
+    let saturn_ring_material = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.86, 0.74, 0.54),
+        emissive: LinearRgba::rgb(0.06, 0.05, 0.035),
+        ..default()
+    });
+
     for body in SOLAR_SYSTEM_BODIES {
         let material = materials.add(StandardMaterial {
             base_color: Color::srgb(body.color_srgb[0], body.color_srgb[1], body.color_srgb[2]),
@@ -167,6 +187,15 @@ fn spawn_solar_system_visuals(
             label_font_size(body),
             label_color(body),
         );
+
+        if has_ring_visual(body.id) {
+            spawn_ring_markers(
+                &mut commands,
+                orbit_marker_sphere.clone(),
+                saturn_ring_material.clone(),
+                body.id,
+            );
+        }
 
         if let Some(orbit) = body.orbit {
             let total = orbit_marker_count(orbit);
@@ -202,6 +231,30 @@ fn spawn_solar_system_visuals(
         },
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
+}
+
+fn spawn_ring_markers(
+    commands: &mut Commands,
+    mesh: Handle<Mesh>,
+    material: Handle<StandardMaterial>,
+    parent_body_id: BodyId,
+) {
+    for ring_radius in [SATURN_RING_INNER_RADIUS, SATURN_RING_OUTER_RADIUS] {
+        for index in 0..SATURN_RING_MARKERS {
+            commands.spawn((
+                Mesh3d(mesh.clone()),
+                MeshMaterial3d(material.clone()),
+                Transform::from_scale(Vec3::splat(SATURN_RING_MARKER_RADIUS)),
+                Visibility::Visible,
+                RingMarkerVisual {
+                    parent_body_id,
+                    index,
+                    total: SATURN_RING_MARKERS,
+                    ring_radius,
+                },
+            ));
+        }
+    }
 }
 
 fn keyboard_label_controls(
@@ -336,6 +389,30 @@ fn update_orbit_markers(
     }
 }
 
+fn update_ring_markers(
+    simulation_clock: Res<SimulationClock>,
+    mut query: Query<(&RingMarkerVisual, &mut Transform)>,
+) {
+    let days_since_j2000 = simulation_clock.0.days_since_j2000();
+
+    for (ring, mut transform) in query.iter_mut() {
+        let Some(parent_position) = body_visual_position(ring.parent_body_id, days_since_j2000)
+        else {
+            continue;
+        };
+
+        let angle = std::f32::consts::TAU * ring.index as f32 / ring.total as f32;
+
+        let ring_position = Vec3::new(
+            angle.cos() * ring.ring_radius,
+            0.0,
+            angle.sin() * ring.ring_radius * 0.42,
+        );
+
+        transform.translation = parent_position + ring_position;
+    }
+}
+
 fn update_solar_body_labels(
     simulation_clock: Res<SimulationClock>,
     camera_query: Query<&Transform, (With<Camera3d>, Without<SolarBodyLabel>)>,
@@ -421,6 +498,10 @@ fn is_major_body_label(id: BodyId) -> bool {
             | BodyId::Uranus
             | BodyId::Neptune
     )
+}
+
+fn has_ring_visual(id: BodyId) -> bool {
+    matches!(id, BodyId::Saturn)
 }
 
 fn body_visual_position(id: BodyId, days_since_j2000: f64) -> Option<Vec3> {
@@ -513,6 +594,21 @@ mod tests {
         assert!(is_planetary_orbit(BodyId::Earth));
         assert!(is_planetary_orbit(BodyId::Jupiter));
         assert!(!is_planetary_orbit(BodyId::Moon));
+    }
+
+    #[test]
+    fn saturn_has_ring_visual() {
+        assert!(has_ring_visual(BodyId::Saturn));
+        assert!(!has_ring_visual(BodyId::Earth));
+        assert!(!has_ring_visual(BodyId::Jupiter));
+    }
+
+    #[test]
+    fn saturn_ring_constants_are_valid() {
+        assert!(SATURN_RING_MARKERS >= 64);
+        assert!(SATURN_RING_INNER_RADIUS > 0.0);
+        assert!(SATURN_RING_OUTER_RADIUS > SATURN_RING_INNER_RADIUS);
+        assert!(SATURN_RING_MARKER_RADIUS > 0.0);
     }
 
     #[test]
