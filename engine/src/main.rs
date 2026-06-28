@@ -3,7 +3,7 @@ use prometheus_engine::camera::{FreeCamera, FreeCameraPlugin};
 use prometheus_engine::coordinates::GlobalPositionComponent;
 use prometheus_engine::floating_origin::FloatingOriginRuntimePlugin;
 use prometheus_engine::render::solar_system::SolarSystemRenderPlugin;
-use prometheus_engine::time::{SimulationClock, SimulationTime};
+use prometheus_engine::time::{SimulationClock, SimulationTime, SimulationTimeControlsPlugin};
 
 fn main() {
     let mut simulation_time = SimulationTime::j2000();
@@ -14,6 +14,7 @@ fn main() {
         .add_plugins((
             FreeCameraPlugin,
             FloatingOriginRuntimePlugin,
+            SimulationTimeControlsPlugin,
             SolarSystemRenderPlugin,
         ))
         .insert_resource(SimulationClock(simulation_time))
@@ -39,7 +40,8 @@ fn setup(mut commands: Commands) {
     ));
 
     info!("Prometheus Universe Engine iniciado.");
-    info!("Fase 0: escala educativa Sol-Tierra-Luna con cámara libre y Floating Origin.");
+    info!("Fase 0: escala educativa Sol-Tierra-Luna con controles de tiempo.");
+    info!("Controles de tiempo: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
 }
 
 fn advance_simulation_time(time: Res<Time>, mut simulation_clock: ResMut<SimulationClock>) {
