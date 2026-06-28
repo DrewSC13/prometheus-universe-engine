@@ -49,7 +49,7 @@ fn setup(mut commands: Commands) {
     ));
 
     info!("Prometheus Universe Engine iniciado.");
-    info!("Fase 1: Sistema Solar educativo dirigido por catálogo.");
+    info!("Fase 1+ Visual Polish: Sistema Solar catalogado procedural.");
     info!("Controles: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
     info!("Render: fondo espacial negro, starfield procedural y polish visual espacial.");
 }
