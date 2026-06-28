@@ -13,7 +13,13 @@ const SOLAR_POINT_LIGHT_RANGE: f32 = 260.0;
 const SOLAR_POINT_LIGHT_RADIUS: f32 = 12.0;
 const SPACE_AMBIENT_BRIGHTNESS: f32 = 0.018;
 
-const PLANET_SURFACE_FEATURE_COUNT: usize = 96;
+const REAL_SOLAR_HALO_LAYER_COUNT: usize = 7;
+const REAL_SOLAR_HALO_RADIUS_FACTORS: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
+    [1.18, 1.36, 1.62, 1.95, 2.38, 2.92, 3.55];
+const REAL_SOLAR_HALO_ALPHA_VALUES: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
+    [0.110, 0.074, 0.050, 0.032, 0.020, 0.012, 0.007];
+const REAL_SOLAR_LIGHT_INTENSITY: f32 = 90_000.0;
+const REAL_SOLAR_LIGHT_RANGE: f32 = 420.0;\n\nconst PLANET_SURFACE_FEATURE_COUNT: usize = 96;
 const PLANET_SURFACE_RADIUS_FACTOR: f32 = 1.012;
 const PLANET_SURFACE_MIN_SCALE: f32 = 0.010;
 const PLANET_SURFACE_MAX_SCALE: f32 = 0.034;
@@ -175,7 +181,13 @@ pub struct SolarCoronaMarkerVisual {
     pub radius: f32,
 }
 
-pub struct SolarSystemRenderPlugin;
+#[derive(Component, Debug)]
+pub struct RealSolarHaloLayer {
+    pub layer: usize,
+}
+
+#[derive(Component, Debug)]
+pub struct RealSolarHaloLight;\n\npub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
@@ -184,7 +196,7 @@ impl Plugin for SolarSystemRenderPlugin {
             brightness: SPACE_AMBIENT_BRIGHTNESS,
             ..default()
         });
-        app.add_systems(Startup, spawn_planet_surface_detail_layer)
+        app.add_systems(Startup, spawn_planet_surface_detail_layer)\n            .add_systems(Startup, spawn_real_solar_halo_glow)
             .add_systems(
                 Update,
                 (update_planet_surface_features, update_planet_band_markers),
@@ -1427,4 +1439,79 @@ mod tests {
 
         assert!(label_vertical_offset(sun) > label_vertical_offset(moon));
     }
+}\n\nfn spawn_real_solar_halo_glow(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let sun_radius = solar_catalog_visual_radius();
+
+    for layer in 0..REAL_SOLAR_HALO_LAYER_COUNT {
+        let radius = sun_radius * REAL_SOLAR_HALO_RADIUS_FACTORS[layer];
+        let alpha = REAL_SOLAR_HALO_ALPHA_VALUES[layer];
+
+        let mesh = meshes.add(Sphere::new(radius).mesh().uv(64, 32));
+        let material = materials.add(StandardMaterial {
+            base_color: Color::srgba(1.0, 0.56, 0.12, alpha),
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            ..default()
+        });
+
+        commands.spawn((
+            Mesh3d(mesh),
+            MeshMaterial3d(material),
+            Transform::from_translation(Vec3::ZERO),
+            RealSolarHaloLayer { layer },
+        ));
+    }
+
+    commands.spawn((
+        PointLight {
+            intensity: REAL_SOLAR_LIGHT_INTENSITY,
+            range: REAL_SOLAR_LIGHT_RANGE,
+            color: Color::srgb(1.0, 0.74, 0.34),
+            shadows_enabled: false,
+            ..default()
+        },
+        Transform::from_translation(Vec3::ZERO),
+        RealSolarHaloLight,
+    ));
 }
+
+fn solar_catalog_visual_radius() -> f32 {
+    SOLAR_SYSTEM_BODIES
+        .iter()
+        .find(|body| body.id == BodyId::Sun)
+        .map(|body| body.visual_radius)
+        .unwrap_or(4.0)
+}\n\n\n#[cfg(test)]
+mod real_solar_halo_glow_tests {
+    use super::*;
+
+    #[test]
+    fn real_solar_halo_layer_arrays_match_layer_count() {
+        assert_eq!(REAL_SOLAR_HALO_RADIUS_FACTORS.len(), REAL_SOLAR_HALO_LAYER_COUNT);
+        assert_eq!(REAL_SOLAR_HALO_ALPHA_VALUES.len(), REAL_SOLAR_HALO_LAYER_COUNT);
+    }
+
+    #[test]
+    fn real_solar_halo_radius_factors_expand_outward() {
+        for pair in REAL_SOLAR_HALO_RADIUS_FACTORS.windows(2) {
+            assert!(pair[0] < pair[1]);
+        }
+    }
+
+    #[test]
+    fn real_solar_halo_alpha_fades_outward() {
+        for pair in REAL_SOLAR_HALO_ALPHA_VALUES.windows(2) {
+            assert!(pair[0] > pair[1]);
+        }
+    }
+
+    #[test]
+    fn real_solar_light_constants_are_valid() {
+        assert!(REAL_SOLAR_LIGHT_INTENSITY > 0.0);
+        assert!(REAL_SOLAR_LIGHT_RANGE > 0.0);
+    }
+}\n
