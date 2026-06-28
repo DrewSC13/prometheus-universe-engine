@@ -9,6 +9,8 @@ use crate::simulation::catalog::{body_position_meters, solar_system_runtime_stat
 use crate::time::SimulationClock;
 
 const AU_METERS: f64 = 149_597_870_700.0;
+const LUNAR_DISTANCE_METERS: f64 = 384_400_000.0;
+const MAX_SATELLITE_ORBIT_VISUAL_RADIUS: f32 = 5.8;
 
 const PLANET_ORBIT_MARKERS: usize = 128;
 const SATELLITE_ORBIT_MARKERS: usize = 64;
@@ -531,7 +533,10 @@ fn educational_orbit_radius(orbit: OrbitDefinition) -> f32 {
         let au = orbit.semi_major_axis_meters / AU_METERS;
         10.0 + au.sqrt() as f32 * 10.0
     } else {
-        2.6
+        let normalized_distance = orbit.semi_major_axis_meters / LUNAR_DISTANCE_METERS;
+        let scaled_radius = 1.2 + normalized_distance.sqrt() as f32;
+
+        scaled_radius.clamp(1.6, MAX_SATELLITE_ORBIT_VISUAL_RADIUS)
     }
 }
 
@@ -594,6 +599,25 @@ mod tests {
         assert!(is_planetary_orbit(BodyId::Earth));
         assert!(is_planetary_orbit(BodyId::Jupiter));
         assert!(!is_planetary_orbit(BodyId::Moon));
+    }
+
+    #[test]
+    fn satellite_orbit_visual_radius_scales_with_distance() {
+        let moon_orbit = OrbitDefinition {
+            parent: BodyId::Earth,
+            semi_major_axis_meters: 384_400_000.0,
+            period_days: 27.0,
+            phase_radians: 0.0,
+        };
+
+        let titan_orbit = OrbitDefinition {
+            parent: BodyId::Saturn,
+            semi_major_axis_meters: 1_221_870_000.0,
+            period_days: 16.0,
+            phase_radians: 0.0,
+        };
+
+        assert!(educational_orbit_radius(titan_orbit) > educational_orbit_radius(moon_orbit));
     }
 
     #[test]
