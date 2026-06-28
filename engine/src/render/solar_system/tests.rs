@@ -1,32 +1,31 @@
 #[test]
 fn planetary_detail_body_selection_is_stable() {
-    assert!(super::is_planetary_detail_body(super::BodyId::Earth));
-    assert!(super::is_planetary_detail_body(super::BodyId::Jupiter));
-    assert!(super::is_planetary_detail_body(super::BodyId::Neptune));
-    assert!(!super::is_planetary_detail_body(super::BodyId::Sun));
-    assert!(!super::is_planetary_detail_body(super::BodyId::Moon));
+    assert!(is_planetary_detail_body(super::BodyId::Earth));
+    assert!(is_planetary_detail_body(super::BodyId::Jupiter));
+    assert!(is_planetary_detail_body(super::BodyId::Neptune));
+    assert!(!is_planetary_detail_body(super::BodyId::Sun));
+    assert!(!is_planetary_detail_body(super::BodyId::Moon));
 }
 
 #[test]
 fn planet_band_visuals_are_limited_to_jupiter_and_saturn() {
-    assert!(super::has_planet_band_visual(super::BodyId::Jupiter));
-    assert!(super::has_planet_band_visual(super::BodyId::Saturn));
-    assert!(!super::has_planet_band_visual(super::BodyId::Earth));
-    assert!(!super::has_planet_band_visual(super::BodyId::Neptune));
+    assert!(has_planet_band_visual(super::BodyId::Jupiter));
+    assert!(has_planet_band_visual(super::BodyId::Saturn));
+    assert!(!has_planet_band_visual(super::BodyId::Earth));
+    assert!(!has_planet_band_visual(super::BodyId::Neptune));
 }
 
 #[test]
 fn planet_surface_feature_counts_are_positive() {
-    assert!(super::planet_surface_feature_count(super::BodyId::Mercury) > 0);
+    assert!(planet_surface_feature_count(super::BodyId::Mercury) > 0);
     assert!(
-        super::planet_surface_feature_count(super::BodyId::Jupiter)
-            > super::PLANET_SURFACE_FEATURE_COUNT
+        planet_surface_feature_count(super::BodyId::Jupiter) > super::PLANET_SURFACE_FEATURE_COUNT
     );
 }
 
 #[test]
 fn planet_surface_feature_scale_stays_positive() {
-    let scale = super::planet_surface_feature_scale(12, 1.0);
+    let scale = planet_surface_feature_scale(12, 1.0);
 
     assert!(scale > 0.0);
 }
@@ -34,34 +33,40 @@ fn planet_surface_feature_scale_stays_positive() {
 #[test]
 fn planet_surface_material_index_stays_in_range() {
     for index in 0..64 {
-        assert!(super::planet_surface_material_index(super::BodyId::Earth, index) < 5);
-        assert!(super::planet_surface_material_index(super::BodyId::Mars, index) < 5);
-        assert!(super::planet_surface_material_index(super::BodyId::Jupiter, index) < 5);
+        assert!(planet_surface_material_index(super::BodyId::Earth, index) < 5);
+        assert!(planet_surface_material_index(super::BodyId::Mars, index) < 5);
+        assert!(planet_surface_material_index(super::BodyId::Jupiter, index) < 5);
     }
 }
 
 #[test]
 fn planet_band_y_factors_exist_only_for_jupiter_and_saturn() {
-    assert!(super::planet_band_y_factors(super::BodyId::Jupiter).is_some());
-    assert!(super::planet_band_y_factors(super::BodyId::Saturn).is_some());
-    assert!(super::planet_band_y_factors(super::BodyId::Earth).is_none());
+    assert!(planet_band_y_factors(super::BodyId::Jupiter).is_some());
+    assert!(planet_band_y_factors(super::BodyId::Saturn).is_some());
+    assert!(planet_band_y_factors(super::BodyId::Earth).is_none());
 }
 
 #[test]
 fn planet_surface_direction_is_normalized() {
-    let direction = super::planet_surface_direction(8, 64, super::BodyId::Earth, 0.4);
+    let direction = planet_surface_direction(8, 64, super::BodyId::Earth, 0.4);
 
     assert!((direction.length() - 1.0).abs() < 0.0001);
 }
 
 #[test]
 fn planet_band_constants_are_valid() {
-    assert!(super::PLANET_BAND_MARKERS >= 96);
-    assert!(super::PLANET_BAND_MARKER_RADIUS > 0.0);
-    assert!(super::JUPITER_BAND_Y_FACTORS.len() > super::SATURN_BAND_Y_FACTORS.len());
+    assert!(PLANET_BAND_MARKERS >= 96);
+    assert!(PLANET_BAND_MARKER_RADIUS > 0.0);
+    assert!(JUPITER_BAND_Y_FACTORS.len() > SATURN_BAND_Y_FACTORS.len());
 }
 
 use super::labels::{is_major_body_label, label_vertical_offset};
+use super::planet_surface::{
+    has_planet_band_visual, is_planetary_detail_body, planet_band_y_factors,
+    planet_surface_direction, planet_surface_feature_count, planet_surface_feature_scale,
+    planet_surface_material_index, JUPITER_BAND_Y_FACTORS, PLANET_BAND_MARKERS,
+    PLANET_BAND_MARKER_RADIUS, SATURN_BAND_Y_FACTORS,
+};
 use super::*;
 use crate::simulation::bodies::OrbitDefinition;
 
