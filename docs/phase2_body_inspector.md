@@ -57,3 +57,17 @@ Controles visibles en HUD:
 - `N`: siguiente cuerpo.
 - `P`: cuerpo anterior.
 - `Escape`: limpiar selección.
+
+
+## Tercer corte: indicador visual de selección
+
+Se añade un indicador visual transparente para el cuerpo seleccionado.
+
+Comportamiento:
+
+- si hay selección activa, el indicador se posiciona sobre el cuerpo seleccionado;
+- si no hay selección, el indicador se oculta;
+- el tamaño del indicador escala con el radio visual del cuerpo;
+- los cuerpos pequeños conservan un padding mínimo para que el indicador siga siendo visible.
+
+Este corte todavía no implementa picking con mouse.

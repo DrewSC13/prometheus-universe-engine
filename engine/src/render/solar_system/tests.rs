@@ -247,3 +247,15 @@ fn star_label_has_larger_vertical_offset_than_moon_label() {
 
     assert!(label_vertical_offset(sun) > label_vertical_offset(moon));
 }
+
+#[test]
+fn selected_body_indicator_scale_exceeds_body_radius() {
+    let body_radius = 1.0;
+
+    assert!(super::selected_body_indicator_scale(body_radius) > body_radius);
+}
+
+#[test]
+fn selected_body_indicator_scale_keeps_small_bodies_visible() {
+    assert!(super::selected_body_indicator_scale(0.1) >= 0.48);
+}
