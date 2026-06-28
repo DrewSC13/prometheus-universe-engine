@@ -1460,6 +1460,7 @@ fn earth_landmass_feature_scale(index: usize, earth_visual_radius: f32, strength
     base * (0.45 + strength * 0.75) * earth_visual_radius.clamp(0.55, 1.35).sqrt()
 }
 
+#[cfg(test)]
 fn earth_landmass_visible_sample_count() -> usize {
     (0..EARTH_LANDMASS_SAMPLE_COUNT)
         .filter(|index| {
