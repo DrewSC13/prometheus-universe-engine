@@ -1,6 +1,6 @@
 use super::{body_visual_position, OrbitVisibilityMode};
 
-use crate::simulation::bodies::{BodyId, OrbitDefinition};
+use crate::simulation::bodies::{BodyId, OrbitDefinition, SOLAR_SYSTEM_BODIES};
 use crate::time::SimulationClock;
 
 use bevy::prelude::*;
