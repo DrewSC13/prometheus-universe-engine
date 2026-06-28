@@ -61,6 +61,7 @@ fn planet_band_constants_are_valid() {
     assert!(super::JUPITER_BAND_Y_FACTORS.len() > super::SATURN_BAND_Y_FACTORS.len());
 }
 
+use super::labels::{is_major_body_label, label_vertical_offset};
 use super::*;
 use crate::simulation::bodies::OrbitDefinition;
 

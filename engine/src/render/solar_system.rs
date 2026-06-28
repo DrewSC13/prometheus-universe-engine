@@ -45,8 +45,8 @@ mod sun;
 use self::earth::*;
 pub use self::labels::LabelVisibilityMode;
 use self::labels::{
-    apply_label_visibility, is_major_body_label, keyboard_label_controls, label_color,
-    label_font_size, label_vertical_offset, spawn_label, update_solar_body_labels,
+    apply_label_visibility, keyboard_label_controls, label_color, label_font_size, spawn_label,
+    update_solar_body_labels,
 };
 use self::orbits::*;
 use self::saturn::*;
