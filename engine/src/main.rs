@@ -4,6 +4,7 @@ use prometheus_engine::coordinates::GlobalPositionComponent;
 use prometheus_engine::floating_origin::FloatingOriginRuntimePlugin;
 use prometheus_engine::render::solar_system::SolarSystemRenderPlugin;
 use prometheus_engine::time::{SimulationClock, SimulationTime, SimulationTimeControlsPlugin};
+use prometheus_engine::ui::hud::SimulationHudPlugin;
 
 fn main() {
     let mut simulation_time = SimulationTime::j2000();
@@ -16,6 +17,7 @@ fn main() {
             FloatingOriginRuntimePlugin,
             SimulationTimeControlsPlugin,
             SolarSystemRenderPlugin,
+            SimulationHudPlugin,
         ))
         .insert_resource(SimulationClock(simulation_time))
         .add_systems(Startup, setup)
@@ -40,8 +42,8 @@ fn setup(mut commands: Commands) {
     ));
 
     info!("Prometheus Universe Engine iniciado.");
-    info!("Fase 0: escala educativa Sol-Tierra-Luna con controles de tiempo.");
-    info!("Controles de tiempo: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
+    info!("Fase 0: escala educativa Sol-Tierra-Luna con HUD y controles de tiempo.");
+    info!("Controles: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
 }
 
 fn advance_simulation_time(time: Res<Time>, mut simulation_clock: ResMut<SimulationClock>) {
