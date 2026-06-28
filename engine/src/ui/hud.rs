@@ -103,7 +103,7 @@ fn update_simulation_hud(
 
         if hud_visibility.compact {
             text.0 = format!(
-                "Prometheus Universe Engine | Fase 1 | JD {:.2} | x{:.0} | {} | pausa: {} | H HUD | M modo",
+                "Prometheus Universe Engine | Fase 1+ Visual Polish | JD {:.2} | x{:.0} | {} | pausa: {} | H HUD | M modo",
                 simulation_time.jd_tdb,
                 simulation_time.time_scale,
                 direction,
@@ -114,7 +114,7 @@ fn update_simulation_hud(
 
         text.0 = format!(
             "Prometheus Universe Engine\n\
-             Fase 1: Sistema Solar catalogado\n\
+             Fase 1+ Visual Polish: Sistema Solar catalogado procedural\n\
              \n\
              Catalogo:\n\
              Cuerpos totales: {}\n\
