@@ -88,7 +88,10 @@ fn update_simulation_hud(
              B = invertir tiempo\n\
              R = reset J2000\n\
              L = etiquetas\n\
-             O = orbitas",
+             O = orbitas\n\
+             C = vista general\n\
+             V = vista lejana\n\
+             F = sistema interior",
             total_bodies,
             root_body_count,
             orbiting_body_count,

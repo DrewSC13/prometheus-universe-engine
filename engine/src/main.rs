@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use prometheus_engine::camera::presets::CameraViewPresetsPlugin;
 use prometheus_engine::camera::{FreeCamera, FreeCameraPlugin};
 use prometheus_engine::coordinates::GlobalPositionComponent;
 use prometheus_engine::floating_origin::FloatingOriginRuntimePlugin;
@@ -14,6 +15,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins((
             FreeCameraPlugin,
+            CameraViewPresetsPlugin,
             FloatingOriginRuntimePlugin,
             SimulationTimeControlsPlugin,
             SolarSystemRenderPlugin,
