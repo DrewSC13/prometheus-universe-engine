@@ -126,7 +126,13 @@ fn spawn_solar_system_visuals(
             },
         ));
 
-        spawn_label(&mut commands, body.name, body.id, label_font_size(body));
+        spawn_label(
+            &mut commands,
+            body.name,
+            body.id,
+            label_font_size(body),
+            label_color(body),
+        );
 
         if let Some(orbit) = body.orbit {
             let total = orbit_marker_count(orbit);
@@ -182,21 +188,46 @@ fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
 
 fn label_font_size(body: &CelestialBodyDefinition) -> f32 {
     match body.class {
-        BodyClass::Star => 24.0,
-        BodyClass::GasGiant | BodyClass::IceGiant => 18.0,
-        BodyClass::TerrestrialPlanet => 16.0,
-        BodyClass::NaturalSatellite => 14.0,
+        BodyClass::Star => 42.0,
+        BodyClass::GasGiant | BodyClass::IceGiant => 30.0,
+        BodyClass::TerrestrialPlanet => 26.0,
+        BodyClass::NaturalSatellite => 22.0,
     }
 }
 
-fn spawn_label(commands: &mut Commands, text: &'static str, id: BodyId, font_size: f32) {
+fn label_vertical_offset(body: &CelestialBodyDefinition) -> f32 {
+    match body.class {
+        BodyClass::Star => body.visual_radius + 2.2,
+        BodyClass::GasGiant | BodyClass::IceGiant => body.visual_radius + 1.5,
+        BodyClass::TerrestrialPlanet => body.visual_radius + 1.1,
+        BodyClass::NaturalSatellite => body.visual_radius + 0.9,
+    }
+}
+
+fn label_color(body: &CelestialBodyDefinition) -> Color {
+    match body.class {
+        BodyClass::Star => Color::srgb(1.0, 0.92, 0.35),
+        BodyClass::TerrestrialPlanet => Color::srgb(0.88, 0.95, 1.0),
+        BodyClass::GasGiant => Color::srgb(1.0, 0.78, 0.52),
+        BodyClass::IceGiant => Color::srgb(0.55, 0.95, 1.0),
+        BodyClass::NaturalSatellite => Color::srgb(0.82, 0.82, 0.82),
+    }
+}
+
+fn spawn_label(
+    commands: &mut Commands,
+    text: &'static str,
+    id: BodyId,
+    font_size: f32,
+    color: Color,
+) {
     commands.spawn((
         Text2d::new(text),
         TextFont {
             font_size,
             ..default()
         },
-        TextColor(Color::WHITE),
+        TextColor(color),
         Transform::from_xyz(0.0, 0.0, 0.0),
         Visibility::Visible,
         SolarBodyLabel { id },
@@ -262,9 +293,15 @@ fn update_orbit_markers(
 
 fn update_solar_body_labels(
     simulation_clock: Res<SimulationClock>,
+    camera_query: Query<&Transform, (With<Camera3d>, Without<SolarBodyLabel>)>,
     mut query: Query<(&SolarBodyLabel, &mut Transform)>,
 ) {
     let days_since_j2000 = simulation_clock.0.days_since_j2000();
+    let camera_rotation = camera_query
+        .iter()
+        .next()
+        .map(|transform| transform.rotation)
+        .unwrap_or(Quat::IDENTITY);
 
     for (label, mut transform) in query.iter_mut() {
         let Some(body) = SOLAR_SYSTEM_BODIES.iter().find(|body| body.id == label.id) else {
@@ -275,7 +312,8 @@ fn update_solar_body_labels(
             continue;
         };
 
-        transform.translation = visual_position + Vec3::new(0.0, body.visual_radius + 0.7, 0.0);
+        transform.translation = visual_position + Vec3::new(0.0, label_vertical_offset(body), 0.0);
+        transform.rotation = camera_rotation;
     }
 }
 
@@ -383,5 +421,35 @@ mod tests {
         assert!(is_major_body_label(BodyId::Earth));
         assert!(is_major_body_label(BodyId::Jupiter));
         assert!(!is_major_body_label(BodyId::Moon));
+    }
+
+    #[test]
+    fn star_label_is_larger_than_earth_label() {
+        let sun = SOLAR_SYSTEM_BODIES
+            .iter()
+            .find(|body| body.id == BodyId::Sun)
+            .unwrap();
+
+        let earth = SOLAR_SYSTEM_BODIES
+            .iter()
+            .find(|body| body.id == BodyId::Earth)
+            .unwrap();
+
+        assert!(label_font_size(sun) > label_font_size(earth));
+    }
+
+    #[test]
+    fn star_label_has_larger_vertical_offset_than_moon_label() {
+        let sun = SOLAR_SYSTEM_BODIES
+            .iter()
+            .find(|body| body.id == BodyId::Sun)
+            .unwrap();
+
+        let moon = SOLAR_SYSTEM_BODIES
+            .iter()
+            .find(|body| body.id == BodyId::Moon)
+            .unwrap();
+
+        assert!(label_vertical_offset(sun) > label_vertical_offset(moon));
     }
 }
