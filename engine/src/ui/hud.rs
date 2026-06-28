@@ -69,6 +69,7 @@ fn update_simulation_hud(
     simulation_clock: Res<SimulationClock>,
     label_visibility_mode: Option<Res<LabelVisibilityMode>>,
     orbit_visibility_mode: Option<Res<OrbitVisibilityMode>>,
+    hud_visibility: Res<HudVisibility>,
     mut query: Query<&mut Text, With<SimulationHudText>>,
 ) {
     let simulation_time = simulation_clock.0;
