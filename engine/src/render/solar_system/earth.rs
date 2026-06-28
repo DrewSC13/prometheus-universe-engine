@@ -1,6 +1,8 @@
-use super::{body_visual_position, deterministic_noise, spherical_fibonacci_direction};
+use super::{
+    axial_tilt_rotation, body_visual_position, deterministic_noise, spherical_fibonacci_direction,
+};
 
-use crate::simulation::bodies::{BodyId, SOLAR_SYSTEM_BODIES};
+use crate::simulation::bodies::{body_rotation_angle_radians, BodyId, SOLAR_SYSTEM_BODIES};
 use crate::time::SimulationClock;
 
 use bevy::math::primitives::Sphere;
@@ -10,7 +12,6 @@ pub(super) const EARTH_LANDMASS_SAMPLE_COUNT: usize = 384;
 pub(super) const EARTH_LANDMASS_RADIUS_FACTOR: f32 = 1.019;
 pub(super) const EARTH_LANDMASS_MIN_SCALE: f32 = 0.016;
 pub(super) const EARTH_LANDMASS_MAX_SCALE: f32 = 0.050;
-pub(super) const EARTH_LANDMASS_ROTATION_SPEED: f32 = 0.034;
 pub(super) const EARTH_LANDMASS_CLUSTER_COUNT: usize = 7;
 pub(super) const EARTH_LANDMASS_CLUSTER_SEEDS: [usize; EARTH_LANDMASS_CLUSTER_COUNT] =
     [7, 19, 42, 86, 133, 211, 307];
@@ -25,7 +26,7 @@ pub(super) const EARTH_CLOUD_FEATURE_COUNT: usize = 144;
 pub(super) const EARTH_CLOUD_RADIUS_FACTOR: f32 = 1.026;
 pub(super) const EARTH_CLOUD_MIN_SCALE: f32 = 0.010;
 pub(super) const EARTH_CLOUD_MAX_SCALE: f32 = 0.030;
-pub(super) const EARTH_CLOUD_ROTATION_SPEED: f32 = 0.052;
+pub(super) const EARTH_CLOUD_ROTATION_DRIFT_FACTOR: f32 = 1.08;
 
 #[derive(Component, Debug, Clone, Copy)]
 pub(super) struct EarthLandmassFeatureVisual {
@@ -112,6 +113,7 @@ pub(super) fn update_earth_atmosphere_layers(
     for (layer, mut transform) in query.iter_mut() {
         let pulse = (days_since_j2000 as f32 * 0.018 + layer.layer as f32).sin() * 0.006;
         transform.translation = earth_position;
+        transform.rotation = axial_tilt_rotation(BodyId::Earth);
         transform.scale = Vec3::splat(1.0 + pulse);
     }
 }
@@ -126,10 +128,12 @@ pub(super) fn update_earth_cloud_features(
         return;
     };
 
-    let phase = days_since_j2000 as f32 * EARTH_CLOUD_ROTATION_SPEED;
+    let phase = body_rotation_angle_radians(BodyId::Earth, days_since_j2000)
+        * EARTH_CLOUD_ROTATION_DRIFT_FACTOR;
 
     for (cloud, mut transform) in query.iter_mut() {
-        let direction = earth_cloud_direction(cloud.index, cloud.total, phase);
+        let direction = axial_tilt_rotation(BodyId::Earth)
+            * earth_cloud_direction(cloud.index, cloud.total, phase);
         transform.translation = earth_position + direction * cloud.radius;
     }
 }
@@ -216,10 +220,11 @@ pub(super) fn update_earth_surface_landmasses(
         return;
     };
 
-    let phase = days_since_j2000 as f32 * EARTH_LANDMASS_ROTATION_SPEED;
+    let phase = body_rotation_angle_radians(BodyId::Earth, days_since_j2000);
 
     for (landmass, mut transform) in query.iter_mut() {
-        let direction = earth_landmass_direction(landmass.index, landmass.total, phase);
+        let direction = axial_tilt_rotation(BodyId::Earth)
+            * earth_landmass_direction(landmass.index, landmass.total, phase);
         transform.translation = earth_position + direction * landmass.radius;
     }
 }

@@ -1,8 +1,9 @@
 use super::{
-    body_visual_position, deterministic_noise, spherical_fibonacci_direction, sun_visual_radius,
+    axial_tilt_rotation, body_visual_position, deterministic_noise, spherical_fibonacci_direction,
+    sun_visual_radius,
 };
 
-use crate::simulation::bodies::{BodyId, SOLAR_SYSTEM_BODIES};
+use crate::simulation::bodies::{body_rotation_angle_radians, BodyId, SOLAR_SYSTEM_BODIES};
 use crate::time::SimulationClock;
 
 use bevy::math::primitives::Sphere;
@@ -124,14 +125,15 @@ pub(super) fn update_solar_surface_features(
     mut query: Query<(&SolarSurfaceFeatureVisual, &mut Transform)>,
 ) {
     let days_since_j2000 = simulation_clock.0.days_since_j2000();
-    let phase = days_since_j2000 as f32 * 0.018;
+    let phase = body_rotation_angle_radians(BodyId::Sun, days_since_j2000);
 
     let Some(sun_position) = body_visual_position(BodyId::Sun, days_since_j2000) else {
         return;
     };
 
     for (feature, mut transform) in query.iter_mut() {
-        let direction = solar_surface_direction(feature.index, phase);
+        let direction =
+            axial_tilt_rotation(BodyId::Sun) * solar_surface_direction(feature.index, phase);
         transform.translation = sun_position + direction * feature.radius;
     }
 }
@@ -141,7 +143,7 @@ pub(super) fn update_solar_corona_markers(
     mut query: Query<(&SolarCoronaMarkerVisual, &mut Transform)>,
 ) {
     let days_since_j2000 = simulation_clock.0.days_since_j2000();
-    let phase = days_since_j2000 as f32 * 0.010;
+    let phase = body_rotation_angle_radians(BodyId::Sun, days_since_j2000) * 0.55;
 
     let Some(sun_position) = body_visual_position(BodyId::Sun, days_since_j2000) else {
         return;
@@ -154,7 +156,8 @@ pub(super) fn update_solar_corona_markers(
             1
         };
 
-        let direction = solar_corona_direction(corona.index, shell_hint, phase);
+        let direction = axial_tilt_rotation(BodyId::Sun)
+            * solar_corona_direction(corona.index, shell_hint, phase);
         transform.translation = sun_position + direction * corona.radius;
     }
 }

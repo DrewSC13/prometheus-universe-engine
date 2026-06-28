@@ -1,6 +1,8 @@
-use super::{body_visual_position, deterministic_noise, spherical_fibonacci_direction};
+use super::{
+    axial_tilt_rotation, body_visual_position, deterministic_noise, spherical_fibonacci_direction,
+};
 
-use crate::simulation::bodies::{BodyId, SOLAR_SYSTEM_BODIES};
+use crate::simulation::bodies::{body_rotation_angle_radians, BodyId, SOLAR_SYSTEM_BODIES};
 use crate::time::SimulationClock;
 
 use bevy::prelude::*;
@@ -170,9 +172,9 @@ pub(super) fn update_planet_surface_features(
             continue;
         };
 
-        let phase = days_since_j2000 as f32 * planet_surface_rotation_speed(feature.body_id);
-        let direction =
-            planet_surface_direction(feature.index, feature.total, feature.body_id, phase);
+        let phase = body_rotation_angle_radians(feature.body_id, days_since_j2000);
+        let direction = axial_tilt_rotation(feature.body_id)
+            * planet_surface_direction(feature.index, feature.total, feature.body_id, phase);
 
         transform.translation = body_position + direction * feature.radius;
     }
@@ -189,7 +191,7 @@ pub(super) fn update_planet_band_markers(
             continue;
         };
 
-        let phase = days_since_j2000 as f32 * planet_surface_rotation_speed(band.body_id) * 1.6;
+        let phase = body_rotation_angle_radians(band.body_id, days_since_j2000);
         let angle = std::f32::consts::TAU * band.index as f32 / band.total as f32 + phase;
 
         let local_position = Vec3::new(
@@ -198,7 +200,7 @@ pub(super) fn update_planet_band_markers(
             angle.sin() * band.band_radius * 0.94,
         );
 
-        transform.translation = body_position + local_position;
+        transform.translation = body_position + axial_tilt_rotation(band.body_id) * local_position;
     }
 }
 
@@ -227,17 +229,6 @@ pub(super) fn planet_surface_feature_count(id: BodyId) -> usize {
         BodyId::Earth | BodyId::Mars | BodyId::Venus => PLANET_SURFACE_FEATURE_COUNT - 18,
         BodyId::Mercury => PLANET_SURFACE_FEATURE_COUNT - 30,
         _ => PLANET_SURFACE_FEATURE_COUNT,
-    }
-}
-
-pub(super) fn planet_surface_rotation_speed(id: BodyId) -> f32 {
-    match id {
-        BodyId::Jupiter => 0.070,
-        BodyId::Saturn => 0.055,
-        BodyId::Earth => 0.040,
-        BodyId::Mars => 0.034,
-        BodyId::Uranus | BodyId::Neptune => 0.026,
-        _ => 0.018,
     }
 }
 

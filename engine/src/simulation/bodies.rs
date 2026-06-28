@@ -56,6 +56,61 @@ pub struct CelestialBodyDefinition {
     pub orbit: Option<OrbitDefinition>,
 }
 
+pub fn body_rotation_period_hours(id: BodyId) -> f64 {
+    match id {
+        BodyId::Sun => 609.12,
+        BodyId::Mercury => 1_407.6,
+        BodyId::Venus => -5_832.5,
+        BodyId::Earth => 23.934_469_6,
+        BodyId::Moon => 655.719_864,
+        BodyId::Mars => 24.6229,
+        BodyId::Jupiter => 9.925,
+        BodyId::Io => 42.456,
+        BodyId::Europa => 85.224,
+        BodyId::Ganymede => 171.72,
+        BodyId::Callisto => 400.536,
+        BodyId::Saturn => 10.656,
+        BodyId::Titan => 382.68,
+        BodyId::Enceladus => 32.885,
+        BodyId::Rhea => 108.43,
+        BodyId::Uranus => -17.24,
+        BodyId::Titania => 208.94,
+        BodyId::Oberon => 323.11,
+        BodyId::Neptune => 16.11,
+        BodyId::Triton => -141.05,
+    }
+}
+
+pub fn body_axial_tilt_degrees(id: BodyId) -> f32 {
+    match id {
+        BodyId::Sun => 7.25,
+        BodyId::Mercury => 0.03,
+        BodyId::Venus => 177.36,
+        BodyId::Earth => 23.44,
+        BodyId::Moon => 6.68,
+        BodyId::Mars => 25.19,
+        BodyId::Jupiter => 3.13,
+        BodyId::Io | BodyId::Europa | BodyId::Ganymede | BodyId::Callisto => 0.0,
+        BodyId::Saturn => 26.73,
+        BodyId::Titan | BodyId::Enceladus | BodyId::Rhea => 26.73,
+        BodyId::Uranus => 97.77,
+        BodyId::Titania | BodyId::Oberon => 97.77,
+        BodyId::Neptune => 28.32,
+        BodyId::Triton => 157.0,
+    }
+}
+
+pub fn body_rotation_fraction(id: BodyId, days_since_j2000: f64) -> f64 {
+    let period_hours = body_rotation_period_hours(id);
+    let elapsed_hours = days_since_j2000 * 24.0;
+
+    (elapsed_hours / period_hours).rem_euclid(1.0)
+}
+
+pub fn body_rotation_angle_radians(id: BodyId, days_since_j2000: f64) -> f32 {
+    (body_rotation_fraction(id, days_since_j2000) * std::f64::consts::TAU) as f32
+}
+
 pub const SOLAR_SYSTEM_BODIES: [CelestialBodyDefinition; 20] = [
     CelestialBodyDefinition {
         id: BodyId::Sun,
@@ -480,5 +535,38 @@ mod tests {
         assert!(saturn_moons.contains(&BodyId::Titan));
         assert!(saturn_moons.contains(&BodyId::Enceladus));
         assert!(saturn_moons.contains(&BodyId::Rhea));
+    }
+}
+
+#[cfg(test)]
+mod rotation_profile_tests {
+    use super::*;
+
+    #[test]
+    fn rotation_periods_include_retrograde_bodies() {
+        assert!(body_rotation_period_hours(BodyId::Earth) > 0.0);
+        assert!(body_rotation_period_hours(BodyId::Venus) < 0.0);
+        assert!(body_rotation_period_hours(BodyId::Uranus) < 0.0);
+    }
+
+    #[test]
+    fn moon_rotation_is_synchronous_with_catalog_orbit() {
+        let moon = SOLAR_SYSTEM_BODIES
+            .iter()
+            .find(|body| body.id == BodyId::Moon)
+            .unwrap();
+
+        let moon_orbit_days = moon.orbit.unwrap().period_days;
+        let moon_rotation_days = body_rotation_period_hours(BodyId::Moon).abs() / 24.0;
+
+        assert!((moon_rotation_days - moon_orbit_days).abs() < 0.001);
+    }
+
+    #[test]
+    fn earth_rotation_returns_near_zero_after_one_sidereal_day() {
+        let earth_rotation_days = body_rotation_period_hours(BodyId::Earth) / 24.0;
+        let fraction = body_rotation_fraction(BodyId::Earth, earth_rotation_days);
+
+        assert!(fraction < 0.0001 || fraction > 0.9999);
     }
 }
