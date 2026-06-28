@@ -389,6 +389,10 @@ fn has_ring_visual(id: BodyId) -> bool {
     matches!(id, BodyId::Saturn)
 }
 
+pub fn solar_body_visual_position(id: BodyId, days_since_j2000: f64) -> Option<Vec3> {
+    body_visual_position(id, days_since_j2000)
+}
+
 fn body_visual_position(id: BodyId, days_since_j2000: f64) -> Option<Vec3> {
     let body = SOLAR_SYSTEM_BODIES.iter().find(|body| body.id == id)?;
 
