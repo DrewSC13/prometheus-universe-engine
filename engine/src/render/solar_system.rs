@@ -23,6 +23,11 @@ const SATURN_RING_INNER_RADIUS: f32 = 1.65;
 const SATURN_RING_OUTER_RADIUS: f32 = 2.35;
 const SATURN_RING_MARKER_RADIUS: f32 = 0.025;
 
+const STARFIELD_STAR_COUNT: usize = 900;
+const STARFIELD_RADIUS: f32 = 320.0;
+const STARFIELD_MIN_SCALE: f32 = 0.018;
+const STARFIELD_MAX_SCALE: f32 = 0.060;
+
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LabelVisibilityMode {
     MajorOnly,
@@ -110,6 +115,9 @@ pub struct RingMarkerVisual {
     pub ring_radius: f32,
 }
 
+#[derive(Component, Debug, Clone, Copy)]
+pub struct StarfieldStarVisual;
+
 pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
@@ -164,6 +172,18 @@ fn spawn_solar_system_visuals(
         emissive: LinearRgba::rgb(0.06, 0.05, 0.035),
         ..default()
     });
+
+    let starfield_material = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.85, 0.90, 1.0),
+        emissive: LinearRgba::rgb(0.55, 0.60, 0.75),
+        ..default()
+    });
+
+    spawn_starfield(
+        &mut commands,
+        orbit_marker_sphere.clone(),
+        starfield_material.clone(),
+    );
 
     for body in SOLAR_SYSTEM_BODIES.iter() {
         let material = materials.add(StandardMaterial {
@@ -233,6 +253,41 @@ fn spawn_solar_system_visuals(
         },
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
+}
+
+fn spawn_starfield(
+    commands: &mut Commands,
+    mesh: Handle<Mesh>,
+    material: Handle<StandardMaterial>,
+) {
+    for index in 0..STARFIELD_STAR_COUNT {
+        let position = starfield_position(index);
+        let scale = starfield_scale(index);
+
+        commands.spawn((
+            Mesh3d(mesh.clone()),
+            MeshMaterial3d(material.clone()),
+            Transform::from_translation(position).with_scale(Vec3::splat(scale)),
+            StarfieldStarVisual,
+        ));
+    }
+}
+
+fn starfield_position(index: usize) -> Vec3 {
+    let i = index as f32 + 0.5;
+
+    let golden_angle = std::f32::consts::PI * (3.0 - 5.0_f32.sqrt());
+    let y = 1.0 - (i / STARFIELD_STAR_COUNT as f32) * 2.0;
+    let radius = (1.0 - y * y).sqrt();
+    let theta = golden_angle * i;
+
+    Vec3::new(theta.cos() * radius, y, theta.sin() * radius) * STARFIELD_RADIUS
+}
+
+fn starfield_scale(index: usize) -> f32 {
+    let noise = ((index as f32 * 12.9898).sin() * 43_758.547).fract().abs();
+
+    STARFIELD_MIN_SCALE + (STARFIELD_MAX_SCALE - STARFIELD_MIN_SCALE) * noise
 }
 
 fn spawn_ring_markers(
@@ -599,6 +654,30 @@ mod tests {
         assert!(is_planetary_orbit(BodyId::Earth));
         assert!(is_planetary_orbit(BodyId::Jupiter));
         assert!(!is_planetary_orbit(BodyId::Moon));
+    }
+
+    #[test]
+    fn starfield_constants_are_valid() {
+        assert!(STARFIELD_STAR_COUNT >= 256);
+        assert!(STARFIELD_RADIUS > 100.0);
+        assert!(STARFIELD_MAX_SCALE > STARFIELD_MIN_SCALE);
+        assert!(STARFIELD_MIN_SCALE > 0.0);
+    }
+
+    #[test]
+    fn starfield_positions_stay_on_shell() {
+        let position = starfield_position(0);
+        let distance = position.length();
+
+        assert!((distance - STARFIELD_RADIUS).abs() < 0.01);
+    }
+
+    #[test]
+    fn starfield_scale_stays_in_range() {
+        let scale = starfield_scale(42);
+
+        assert!(scale >= STARFIELD_MIN_SCALE);
+        assert!(scale <= STARFIELD_MAX_SCALE);
     }
 
     #[test]
