@@ -179,6 +179,11 @@ pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
+        app.insert_resource(AmbientLight {
+            color: Color::srgb(0.04, 0.045, 0.055),
+            brightness: SPACE_AMBIENT_BRIGHTNESS,
+            ..default()
+        });
         app.add_systems(Startup, spawn_planet_surface_detail_layer)
             .add_systems(
                 Update,
