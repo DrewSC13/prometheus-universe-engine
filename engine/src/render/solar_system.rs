@@ -2,9 +2,7 @@ use bevy::math::primitives::Sphere;
 use bevy::prelude::*;
 
 use crate::coordinates::{GlobalPosition, GlobalPositionComponent};
-use crate::simulation::bodies::{
-    BodyClass, BodyId, CelestialBodyDefinition, OrbitDefinition, SOLAR_SYSTEM_BODIES,
-};
+use crate::simulation::bodies::{BodyClass, BodyId, CelestialBodyDefinition, SOLAR_SYSTEM_BODIES};
 use crate::simulation::catalog::{body_position_meters, solar_system_runtime_state};
 use crate::time::SimulationClock;
 
@@ -38,24 +36,16 @@ pub struct PlanetBandMarkerVisual {
 }
 
 mod earth;
+mod orbits;
 mod saturn;
 mod starfield;
 mod sun;
 
 use self::earth::*;
+use self::orbits::*;
 use self::saturn::*;
 use self::starfield::*;
 use self::sun::*;
-
-const AU_METERS: f64 = 149_597_870_700.0;
-const LUNAR_DISTANCE_METERS: f64 = 384_400_000.0;
-const MAX_SATELLITE_ORBIT_VISUAL_RADIUS: f32 = 5.8;
-
-const PLANET_ORBIT_MARKERS: usize = 128;
-const SATELLITE_ORBIT_MARKERS: usize = 64;
-
-const PLANET_ORBIT_MARKER_RADIUS: f32 = 0.025;
-const SATELLITE_ORBIT_MARKER_RADIUS: f32 = 0.020;
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LabelVisibilityMode {
@@ -127,13 +117,6 @@ pub struct SolarBodyVisual {
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SolarBodyLabel {
     pub id: BodyId,
-}
-
-#[derive(Component, Debug, Clone, Copy)]
-pub struct OrbitMarkerVisual {
-    pub body_id: BodyId,
-    pub index: usize,
-    pub total: usize,
 }
 
 pub struct SolarSystemRenderPlugin;
@@ -320,27 +303,14 @@ fn spawn_solar_system_visuals(
         }
 
         if let Some(orbit) = body.orbit {
-            let total = orbit_marker_count(orbit);
-            let marker_radius = orbit_marker_radius(orbit);
-            let orbit_material = if orbit.parent == BodyId::Sun {
-                planet_orbit_material.clone()
-            } else {
-                satellite_orbit_material.clone()
-            };
-
-            for index in 0..total {
-                commands.spawn((
-                    Mesh3d(small_sphere.clone()),
-                    MeshMaterial3d(orbit_material.clone()),
-                    Transform::from_scale(Vec3::splat(marker_radius)),
-                    Visibility::Visible,
-                    OrbitMarkerVisual {
-                        body_id: body.id,
-                        index,
-                        total,
-                    },
-                ));
-            }
+            spawn_orbit_markers(
+                &mut commands,
+                small_sphere.clone(),
+                planet_orbit_material.clone(),
+                satellite_orbit_material.clone(),
+                body.id,
+                orbit,
+            );
         }
     }
 
@@ -362,16 +332,6 @@ fn keyboard_label_controls(
     if keyboard.just_pressed(KeyCode::KeyL) {
         *label_visibility_mode = label_visibility_mode.next();
         info!("Label visibility mode: {}", label_visibility_mode.as_str());
-    }
-}
-
-fn keyboard_orbit_controls(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut orbit_visibility_mode: ResMut<OrbitVisibilityMode>,
-) {
-    if keyboard.just_pressed(KeyCode::KeyO) {
-        *orbit_visibility_mode = orbit_visibility_mode.next();
-        info!("Orbit visibility mode: {}", orbit_visibility_mode.as_str());
     }
 }
 
@@ -456,37 +416,6 @@ fn update_solar_system_visuals(
     }
 }
 
-fn update_orbit_markers(
-    simulation_clock: Res<SimulationClock>,
-    mut query: Query<(&OrbitMarkerVisual, &mut Transform)>,
-) {
-    let days_since_j2000 = simulation_clock.0.days_since_j2000();
-
-    for (marker, mut transform) in query.iter_mut() {
-        let Some(body) = SOLAR_SYSTEM_BODIES
-            .iter()
-            .find(|body| body.id == marker.body_id)
-        else {
-            continue;
-        };
-
-        let Some(orbit) = body.orbit else {
-            continue;
-        };
-
-        let Some(parent_visual_position) = body_visual_position(orbit.parent, days_since_j2000)
-        else {
-            continue;
-        };
-
-        let angle = std::f32::consts::TAU * marker.index as f32 / marker.total as f32;
-        let circle_position = Vec3::new(angle.cos(), 0.0, angle.sin());
-        let visual_radius = educational_orbit_radius(orbit);
-
-        transform.translation = parent_visual_position + circle_position * visual_radius;
-    }
-}
-
 fn update_solar_body_labels(
     simulation_clock: Res<SimulationClock>,
     camera_query: Query<&Transform, (With<Camera3d>, Without<SolarBodyLabel>)>,
@@ -532,33 +461,6 @@ fn apply_label_visibility(
     }
 }
 
-fn apply_orbit_visibility(
-    orbit_visibility_mode: Res<OrbitVisibilityMode>,
-    mut query: Query<(&OrbitMarkerVisual, &mut Visibility)>,
-) {
-    for (marker, mut visibility) in query.iter_mut() {
-        let visible = match *orbit_visibility_mode {
-            OrbitVisibilityMode::All => true,
-            OrbitVisibilityMode::PlanetaryOnly => is_planetary_orbit(marker.body_id),
-            OrbitVisibilityMode::None => false,
-        };
-
-        *visibility = if visible {
-            Visibility::Visible
-        } else {
-            Visibility::Hidden
-        };
-    }
-}
-
-fn is_planetary_orbit(body_id: BodyId) -> bool {
-    SOLAR_SYSTEM_BODIES
-        .iter()
-        .find(|body| body.id == body_id)
-        .and_then(|body| body.orbit)
-        .is_some_and(|orbit| orbit.parent == BodyId::Sun)
-}
-
 fn is_major_body_label(id: BodyId) -> bool {
     matches!(
         id,
@@ -597,34 +499,6 @@ fn body_visual_position(id: BodyId, days_since_j2000: f64) -> Option<Vec3> {
             )
         }
         None => Some(Vec3::ZERO),
-    }
-}
-
-fn educational_orbit_radius(orbit: OrbitDefinition) -> f32 {
-    if orbit.parent == BodyId::Sun {
-        let au = orbit.semi_major_axis_meters / AU_METERS;
-        10.0 + au.sqrt() as f32 * 10.0
-    } else {
-        let normalized_distance = orbit.semi_major_axis_meters / LUNAR_DISTANCE_METERS;
-        let scaled_radius = 1.2 + normalized_distance.sqrt() as f32;
-
-        scaled_radius.clamp(1.6, MAX_SATELLITE_ORBIT_VISUAL_RADIUS)
-    }
-}
-
-fn orbit_marker_count(orbit: OrbitDefinition) -> usize {
-    if orbit.parent == BodyId::Sun {
-        PLANET_ORBIT_MARKERS
-    } else {
-        SATELLITE_ORBIT_MARKERS
-    }
-}
-
-fn orbit_marker_radius(orbit: OrbitDefinition) -> f32 {
-    if orbit.parent == BodyId::Sun {
-        PLANET_ORBIT_MARKER_RADIUS
-    } else {
-        SATELLITE_ORBIT_MARKER_RADIUS
     }
 }
 
