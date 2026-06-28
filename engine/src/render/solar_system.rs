@@ -8,6 +8,11 @@ use crate::simulation::bodies::{
 use crate::simulation::catalog::{body_position_meters, solar_system_runtime_state};
 use crate::time::SimulationClock;
 
+const SOLAR_POINT_LIGHT_INTENSITY: f32 = 18_000_000.0;
+const SOLAR_POINT_LIGHT_RANGE: f32 = 260.0;
+const SOLAR_POINT_LIGHT_RADIUS: f32 = 12.0;
+const SPACE_AMBIENT_BRIGHTNESS: f32 = 0.018;
+
 const PLANET_SURFACE_FEATURE_COUNT: usize = 96;
 const PLANET_SURFACE_RADIUS_FACTOR: f32 = 1.012;
 const PLANET_SURFACE_MIN_SCALE: f32 = 0.010;
@@ -304,6 +309,7 @@ fn spawn_solar_system_visuals(
         ));
 
         if body.id == BodyId::Sun {
+            spawn_solar_point_light(&mut commands);
             spawn_solar_surface_features(
                 &mut commands,
                 small_sphere.clone(),
@@ -389,6 +395,20 @@ fn spawn_starfield(
             StarfieldStarVisual,
         ));
     }
+}
+
+fn spawn_solar_point_light(commands: &mut Commands) {
+    commands.spawn((
+        PointLight {
+            intensity: SOLAR_POINT_LIGHT_INTENSITY,
+            range: SOLAR_POINT_LIGHT_RANGE,
+            radius: SOLAR_POINT_LIGHT_RADIUS,
+            shadows_enabled: false,
+            ..default()
+        },
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        Name::new("Solar Point Light"),
+    ));
 }
 
 fn spawn_solar_surface_features(
