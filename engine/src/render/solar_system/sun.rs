@@ -31,21 +31,17 @@ pub(super) const SOLAR_CORONA_OUTER_SCALE: f32 = 0.055;
 #[derive(Component, Debug, Clone, Copy)]
 pub(super) struct SolarSurfaceFeatureVisual {
     pub index: usize,
-    pub total: usize,
     pub radius: f32,
 }
 
 #[derive(Component, Debug, Clone, Copy)]
 pub(super) struct SolarCoronaMarkerVisual {
     pub index: usize,
-    pub total: usize,
     pub radius: f32,
 }
 
 #[derive(Component, Debug)]
-pub(super) struct RealSolarHaloLayer {
-    pub layer: usize,
-}
+pub(super) struct RealSolarHaloLayer;
 
 #[derive(Component, Debug)]
 pub(super) struct RealSolarHaloLight;
@@ -82,7 +78,6 @@ pub(super) fn spawn_solar_surface_features(
             Transform::from_translation(position).with_scale(Vec3::splat(scale)),
             SolarSurfaceFeatureVisual {
                 index,
-                total: SOLAR_SURFACE_FEATURE_COUNT,
                 radius: sun_visual_radius * SOLAR_SURFACE_RADIUS_FACTOR,
             },
         ));
@@ -118,11 +113,7 @@ pub(super) fn spawn_solar_corona_markers(
                 Mesh3d(mesh.clone()),
                 MeshMaterial3d(material),
                 Transform::from_translation(position).with_scale(Vec3::splat(scale)),
-                SolarCoronaMarkerVisual {
-                    index,
-                    total: SOLAR_CORONA_MARKERS_PER_SHELL,
-                    radius,
-                },
+                SolarCoronaMarkerVisual { index, radius },
             ));
         }
     }
@@ -218,7 +209,7 @@ pub(super) fn spawn_real_solar_halo_glow(
             Mesh3d(mesh),
             MeshMaterial3d(material),
             Transform::from_translation(Vec3::ZERO),
-            RealSolarHaloLayer { layer },
+            RealSolarHaloLayer,
         ));
     }
 
