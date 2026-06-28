@@ -417,6 +417,7 @@ fn spawn_solar_system_visuals(
         if has_ring_visual(body.id) {
             spawn_ring_markers(
                 &mut commands,
+                &mut meshes,
                 small_sphere.clone(),
                 saturn_ring_material.clone(),
                 body.id,
@@ -644,6 +645,7 @@ fn build_saturn_ring_annulus_mesh(inner_radius: f32, outer_radius: f32, segments
 
 fn spawn_ring_markers(
     commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
     parent_body_id: BodyId,
