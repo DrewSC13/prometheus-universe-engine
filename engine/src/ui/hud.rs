@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 
+use crate::interaction::selection::{
+    selected_body_compact_label, selected_body_hud_summary, SelectedBody,
+};
 use crate::render::solar_system::{LabelVisibilityMode, OrbitVisibilityMode};
 use crate::simulation::bodies::{orbiting_bodies, root_bodies, SOLAR_SYSTEM_BODIES};
 use crate::time::{SimulationClock, TimeDirection};
@@ -69,6 +72,7 @@ fn update_simulation_hud(
     simulation_clock: Res<SimulationClock>,
     label_visibility_mode: Option<Res<LabelVisibilityMode>>,
     orbit_visibility_mode: Option<Res<OrbitVisibilityMode>>,
+    selected_body: Option<Res<SelectedBody>>,
     hud_visibility: Res<HudVisibility>,
     mut query: Query<&mut Text, With<SimulationHudText>>,
 ) {
@@ -95,6 +99,10 @@ fn update_simulation_hud(
         .map(OrbitVisibilityMode::as_str)
         .unwrap_or("unknown");
 
+    let selected_body = selected_body.as_deref().copied().unwrap_or_default();
+    let selected_body_label = selected_body_compact_label(selected_body);
+    let selected_body_summary = selected_body_hud_summary(selected_body);
+
     for mut text in query.iter_mut() {
         if !hud_visibility.visible {
             text.0.clear();
@@ -103,11 +111,12 @@ fn update_simulation_hud(
 
         if hud_visibility.compact {
             text.0 = format!(
-                "Prometheus Universe Engine | Fase 1+ Visual Polish | JD {:.2} | x{:.0} | {} | pausa: {} | H HUD | M modo",
+                "Prometheus Universe Engine | Fase 2 Body Inspector | JD {:.2} | x{:.0} | {} | pausa: {} | seleccion: {} | H HUD | M modo",
                 simulation_time.jd_tdb,
                 simulation_time.time_scale,
                 direction,
                 paused,
+                selected_body_label,
             );
             continue;
         }
@@ -123,6 +132,9 @@ fn update_simulation_hud(
              Etiquetas: {}\n\
              Orbitas: {}\n\
              \n\
+             Seleccion:\n\
+             {}\n\
+             \n\
              Tiempo:\n\
              JD TDB: {:.5}\n\
              Dias desde J2000: {:.2}\n\
@@ -137,6 +149,9 @@ fn update_simulation_hud(
              R = reset J2000\n\
              L = etiquetas\n\
              O = orbitas\n\
+             N = siguiente cuerpo\n\
+             P = cuerpo anterior\n\
+             Escape = limpiar seleccion\n\
              C = vista general\n\
              V = vista lejana\n\
              F = sistema interior\n\
@@ -147,6 +162,7 @@ fn update_simulation_hud(
             orbiting_body_count,
             label_mode,
             orbit_mode,
+            selected_body_summary,
             simulation_time.jd_tdb,
             simulation_time.days_since_j2000(),
             simulation_time.time_scale,

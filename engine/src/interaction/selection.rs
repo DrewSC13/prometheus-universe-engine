@@ -69,6 +69,32 @@ pub fn body_class_name(class: BodyClass) -> &'static str {
     }
 }
 
+pub fn selected_body_compact_label(selected_body: SelectedBody) -> &'static str {
+    selected_body_definition(selected_body)
+        .map(|body| body.name)
+        .unwrap_or("none")
+}
+
+pub fn selected_body_hud_summary(selected_body: SelectedBody) -> String {
+    match selected_body_definition(selected_body) {
+        Some(body) => format!(
+            "Seleccion: {}\nClase: {}\nRadio: {:.0} km\nMasa: {:.3e} kg\nOrbita: {}",
+            body.name,
+            body_class_name(body.class),
+            body.physical_radius_meters / 1_000.0,
+            body.mass_kg,
+            body_orbit_parent_name(body)
+        ),
+        None => "Seleccion: none\nClase: -\nRadio: -\nMasa: -\nOrbita: -".to_string(),
+    }
+}
+
+pub fn body_orbit_parent_name(body: &CelestialBodyDefinition) -> &'static str {
+    body.orbit
+        .and_then(|orbit| body_definition(orbit.parent).map(|parent| parent.name))
+        .unwrap_or("none")
+}
+
 fn cycle_body_id(current: Option<BodyId>, step: isize) -> Option<BodyId> {
     if SOLAR_SYSTEM_BODIES.is_empty() {
         return None;
@@ -147,5 +173,43 @@ mod tests {
             body_class_name(BodyClass::NaturalSatellite),
             "natural satellite"
         );
+    }
+
+    #[test]
+    fn selected_body_compact_label_reports_none_when_empty() {
+        assert_eq!(selected_body_compact_label(SelectedBody::default()), "none");
+    }
+
+    #[test]
+    fn selected_body_compact_label_reports_body_name() {
+        let selected = SelectedBody {
+            id: Some(BodyId::Earth),
+        };
+
+        assert_eq!(selected_body_compact_label(selected), "Tierra");
+    }
+
+    #[test]
+    fn body_orbit_parent_name_reports_catalog_parent() {
+        let earth = body_definition(BodyId::Earth).unwrap();
+        let sun = body_definition(BodyId::Sun).unwrap();
+
+        assert_eq!(body_orbit_parent_name(earth), "Sol");
+        assert_eq!(body_orbit_parent_name(sun), "none");
+    }
+
+    #[test]
+    fn selected_body_hud_summary_contains_core_fields() {
+        let selected = SelectedBody {
+            id: Some(BodyId::Earth),
+        };
+
+        let summary = selected_body_hud_summary(selected);
+
+        assert!(summary.contains("Seleccion: Tierra"));
+        assert!(summary.contains("Clase: terrestrial planet"));
+        assert!(summary.contains("Radio: 6371 km"));
+        assert!(summary.contains("Masa: 5.972e24 kg"));
+        assert!(summary.contains("Orbita: Sol"));
     }
 }
