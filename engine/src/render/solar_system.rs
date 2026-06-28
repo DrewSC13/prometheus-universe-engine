@@ -3,7 +3,10 @@ use bevy::prelude::*;
 
 use crate::coordinates::{GlobalPosition, GlobalPositionComponent};
 use crate::interaction::selection::SelectedBody;
-use crate::simulation::bodies::{BodyClass, BodyId, CelestialBodyDefinition, SOLAR_SYSTEM_BODIES};
+use crate::simulation::bodies::{
+    body_axial_tilt_degrees, body_rotation_angle_radians, BodyClass, BodyId,
+    CelestialBodyDefinition, SOLAR_SYSTEM_BODIES,
+};
 use crate::simulation::catalog::{
     body_definition, body_position_meters, solar_system_runtime_state,
 };
@@ -381,8 +384,18 @@ fn update_solar_system_visuals(
 
         if let Some(visual_position) = body_visual_position(body_visual.id, days_since_j2000) {
             transform.translation = visual_position;
+            transform.rotation = axial_body_rotation(body_visual.id, days_since_j2000);
         }
     }
+}
+
+fn axial_body_rotation(id: BodyId, days_since_j2000: f64) -> Quat {
+    axial_tilt_rotation(id)
+        * Quat::from_rotation_y(body_rotation_angle_radians(id, days_since_j2000))
+}
+
+fn axial_tilt_rotation(id: BodyId) -> Quat {
+    Quat::from_rotation_z(body_axial_tilt_degrees(id).to_radians())
 }
 
 fn has_ring_visual(id: BodyId) -> bool {

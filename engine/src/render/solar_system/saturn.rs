@@ -1,4 +1,4 @@
-use super::{body_visual_position, BodyId, SimulationClock};
+use super::{axial_tilt_rotation, body_visual_position, BodyId, SimulationClock};
 
 use bevy::prelude::*;
 
@@ -162,7 +162,8 @@ pub(super) fn update_ring_markers(
                 angle.sin() * ring.ring_radius * SATURN_RING_MESH_Y_SCALE,
             );
 
-            transform.translation = parent_position + ring_position;
+            transform.translation =
+                parent_position + axial_tilt_rotation(ring.parent_body_id) * ring_position;
         }
     }
 
@@ -177,6 +178,7 @@ pub(super) fn update_ring_markers(
             };
 
             transform.translation = parent_position;
+            transform.rotation = axial_tilt_rotation(ring_mesh.parent_body_id);
         }
     }
 }
