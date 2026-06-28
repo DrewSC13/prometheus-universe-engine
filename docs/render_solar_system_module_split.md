@@ -68,3 +68,27 @@ Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
 
 `mod earth;`
 `use self::earth::*;`
+
+
+## Cuarto corte seguro: Sol
+
+Se extrajo la lógica visual del Sol a:
+
+`engine/src/render/solar_system/sun.rs`
+
+Incluye:
+
+- constantes de luz solar;
+- constantes de superficie solar;
+- constantes de corona;
+- constantes de halo solar real;
+- componentes visuales solares;
+- spawn/update de features de superficie solar;
+- spawn/update de marcadores de corona;
+- glow/halo solar real;
+- helpers usados por tests.
+
+Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
+
+`mod sun;`
+`use self::sun::*;`
