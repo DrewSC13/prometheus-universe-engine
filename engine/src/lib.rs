@@ -1,3 +1,4 @@
+pub mod camera;
 pub mod coordinates;
 pub mod floating_origin;
 pub mod render;

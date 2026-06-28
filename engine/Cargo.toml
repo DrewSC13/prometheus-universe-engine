@@ -9,7 +9,6 @@ repository = "https://github.com/DrewSC13/prometheus-universe-engine"
 [dependencies]
 bevy = "0.17"
 bevy_egui = "0.35"
-glam = "0.29"
 nalgebra = "0.33"
 serde = { version = "1.0", features = ["derive"] }
 bytemuck = { version = "1.20", features = ["derive"] }
