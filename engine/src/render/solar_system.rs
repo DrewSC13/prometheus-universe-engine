@@ -8,10 +8,10 @@ use crate::simulation::bodies::{
 use crate::simulation::catalog::{body_position_meters, solar_system_runtime_state};
 use crate::time::SimulationClock;
 
-const PLANET_SURFACE_FEATURE_COUNT: usize = 72;
-const PLANET_SURFACE_RADIUS_FACTOR: f32 = 1.035;
-const PLANET_SURFACE_MIN_SCALE: f32 = 0.035;
-const PLANET_SURFACE_MAX_SCALE: f32 = 0.120;
+const PLANET_SURFACE_FEATURE_COUNT: usize = 96;
+const PLANET_SURFACE_RADIUS_FACTOR: f32 = 1.012;
+const PLANET_SURFACE_MIN_SCALE: f32 = 0.010;
+const PLANET_SURFACE_MAX_SCALE: f32 = 0.034;
 
 const PLANET_BAND_MARKERS: usize = 168;
 const PLANET_BAND_MARKER_RADIUS: f32 = 0.034;
