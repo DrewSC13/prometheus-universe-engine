@@ -93,3 +93,23 @@ Implementación:
 - `engine/src/interaction/focus.rs`
 - `BodyFocusPlugin`
 - `solar_body_visual_position` como wrapper público seguro para obtener posiciones visuales del render solar.
+
+
+## Quinto corte: selección con mouse
+
+Se añade selección directa con mouse.
+
+Control nuevo:
+
+- `Click izquierdo`: selecciona el cuerpo solar bajo el cursor.
+
+Implementación:
+
+- `engine/src/interaction/picking.rs`
+- `BodyPickingPlugin`
+- conversión de cursor a rayo con `Camera::viewport_to_world`;
+- intersección aproximada rayo-esfera contra `SolarBodyVisual`;
+- selección del cuerpo más cercano intersectado;
+- actualización de `SelectedBody`.
+
+Este corte usa picking geométrico manual y no requiere dependencias nuevas.
