@@ -18,9 +18,7 @@ fn planet_band_visuals_are_limited_to_jupiter_and_saturn() {
 #[test]
 fn planet_surface_feature_counts_are_positive() {
     assert!(planet_surface_feature_count(super::BodyId::Mercury) > 0);
-    assert!(
-        planet_surface_feature_count(super::BodyId::Jupiter) > super::PLANET_SURFACE_FEATURE_COUNT
-    );
+    assert!(planet_surface_feature_count(super::BodyId::Jupiter) > PLANET_SURFACE_FEATURE_COUNT);
 }
 
 #[test]
@@ -65,7 +63,7 @@ use super::planet_surface::{
     has_planet_band_visual, is_planetary_detail_body, planet_band_y_factors,
     planet_surface_direction, planet_surface_feature_count, planet_surface_feature_scale,
     planet_surface_material_index, JUPITER_BAND_Y_FACTORS, PLANET_BAND_MARKERS,
-    PLANET_BAND_MARKER_RADIUS, SATURN_BAND_Y_FACTORS,
+    PLANET_BAND_MARKER_RADIUS, PLANET_SURFACE_FEATURE_COUNT, SATURN_BAND_Y_FACTORS,
 };
 use super::*;
 use crate::simulation::bodies::OrbitDefinition;
