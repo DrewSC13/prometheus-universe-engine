@@ -30,7 +30,7 @@ fn setup(mut commands: Commands) {
         Camera3d::default(),
         FreeCamera,
         GlobalPositionComponent::default(),
-        Transform::from_xyz(0.0, 12.0, 42.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0.0, 30.0, 115.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     commands.spawn((
@@ -42,7 +42,7 @@ fn setup(mut commands: Commands) {
     ));
 
     info!("Prometheus Universe Engine iniciado.");
-    info!("Fase 0: escala educativa Sol-Tierra-Luna con HUD y controles de tiempo.");
+    info!("Fase 1: Sistema Solar educativo dirigido por catálogo.");
     info!("Controles: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
 }
 
