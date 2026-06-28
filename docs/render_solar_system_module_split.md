@@ -111,3 +111,25 @@ Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
 
 `mod starfield;`
 `use self::starfield::*;`
+
+
+## Sexto corte seguro: Órbitas
+
+Se extrajo la lógica visual orbital a:
+
+`engine/src/render/solar_system/orbits.rs`
+
+Incluye:
+
+- constantes de escalado orbital;
+- componente visual de marcadores orbitales;
+- spawn de marcadores orbitales;
+- actualización de marcadores orbitales;
+- visibilidad orbital;
+- helper de radio educativo de órbita;
+- helpers de cantidad y tamaño de marcadores orbitales.
+
+Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
+
+`mod orbits;`
+`use self::orbits::*;`

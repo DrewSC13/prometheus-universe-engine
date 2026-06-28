@@ -62,6 +62,7 @@ fn planet_band_constants_are_valid() {
 }
 
 use super::*;
+use crate::simulation::bodies::OrbitDefinition;
 
 #[test]
 fn label_visibility_mode_cycles_in_expected_order() {
