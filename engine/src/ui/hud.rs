@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::simulation::bodies::{orbiting_bodies, root_bodies, SOLAR_SYSTEM_BODIES};
 use crate::time::{SimulationClock, TimeDirection};
 
 #[derive(Component, Debug)]
@@ -45,10 +46,21 @@ fn update_simulation_hud(
 
     let paused = if simulation_time.paused { "yes" } else { "no" };
 
+    let total_bodies = SOLAR_SYSTEM_BODIES.len();
+    let root_body_count = root_bodies().count();
+    let orbiting_body_count = orbiting_bodies().count();
+
     for mut text in query.iter_mut() {
         text.0 = format!(
             "Prometheus Universe Engine\n\
              Fase 1: Sistema Solar catalogado\n\
+             \n\
+             Catalogo:\n\
+             Cuerpos totales: {}\n\
+             Cuerpos raiz: {}\n\
+             Cuerpos orbitando: {}\n\
+             \n\
+             Tiempo:\n\
              JD TDB: {:.5}\n\
              Dias desde J2000: {:.2}\n\
              Escala temporal: x{:.0}\n\
@@ -60,6 +72,9 @@ fn update_simulation_hud(
              1-6 = velocidad\n\
              B = invertir tiempo\n\
              R = reset J2000",
+            total_bodies,
+            root_body_count,
+            orbiting_body_count,
             simulation_time.jd_tdb,
             simulation_time.days_since_j2000(),
             simulation_time.time_scale,
