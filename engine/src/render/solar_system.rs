@@ -15,9 +15,9 @@ const SPACE_AMBIENT_BRIGHTNESS: f32 = 0.018;
 
 const REAL_SOLAR_HALO_LAYER_COUNT: usize = 5;
 const REAL_SOLAR_HALO_RADIUS_FACTORS: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
-    [1.18, 1.42, 1.75, 2.15, 2.70];
+    [1.08, 1.22, 1.42, 1.68, 2.05];
 const REAL_SOLAR_HALO_ALPHA_VALUES: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
-    [0.075, 0.045, 0.025, 0.012, 0.005];
+    [0.016, 0.008, 0.0035, 0.0012, 0.0003];
 const REAL_SOLAR_LIGHT_INTENSITY: f32 = 90_000.0;
 const REAL_SOLAR_LIGHT_RANGE: f32 = 420.0;
 
@@ -1462,6 +1462,7 @@ fn spawn_real_solar_halo_glow(
             base_color: Color::srgba(1.0, 0.56, 0.12, alpha),
             alpha_mode: AlphaMode::Blend,
             unlit: true,
+            emissive: LinearRgba::rgb(95.0, 52.0, 12.0),
             ..default()
         });
 
