@@ -125,32 +125,32 @@ fn update_simulation_hud(
 
         text.0 = format!(
             "PROMETHEUS UNIVERSE ENGINE\n\
-             Fase 2 · Body Inspector\n\
-             ─────────────────────────────\n\
+             Fase 2 - Body Inspector\n\
+             -----------------------------\n\
              \n\
              [CATALOGO]\n\
-             • Cuerpos totales: {}\n\
-             • Cuerpos raiz: {}\n\
-             • Cuerpos orbitando: {}\n\
-             • Etiquetas: {}\n\
-             • Orbitas: {}\n\
+             Cuerpos totales: {}\n\
+             Cuerpos raiz: {}\n\
+             Cuerpos orbitando: {}\n\
+             Etiquetas: {}\n\
+             Orbitas: {}\n\
              \n\
              [SELECCION]\n\
              {}\n\
              \n\
              [TIEMPO]\n\
-             • JD TDB: {:.5}\n\
-             • Dias desde J2000: {:.2}\n\
-             • Velocidad: {}\n\
-             • Direccion: {}\n\
-             • Pausado: {}\n\
+             JD TDB: {:.5}\n\
+             Dias desde J2000: {:.2}\n\
+             Velocidad: {}\n\
+             Direccion: {}\n\
+             Pausado: {}\n\
              \n\
              [CONTROLES]\n\
-             • Mouse: click izquierdo selecciona\n\
-             • Seleccion: N/P cambia · Escape limpia\n\
-             • Camara: G enfoca · C/V/F vistas\n\
-             • Tiempo: Space pausa · 1-9/0 velocidad · B invierte · R reset\n\
-             • Visual: L etiquetas · O orbitas · H HUD · M compacto",
+             Mouse: click izquierdo selecciona\n\
+             Seleccion: N/P cambia | Escape limpia\n\
+             Camara: G enfoca | C/V/F vistas\n\
+             Tiempo: Space pausa | 1-9/0 velocidad | B invierte | R reset\n\
+             Visual: L etiquetas | O orbitas | H HUD | M compacto",
             total_bodies,
             root_body_count,
             orbiting_body_count,
