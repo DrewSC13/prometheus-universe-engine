@@ -23,10 +23,21 @@ const SATURN_RING_INNER_RADIUS: f32 = 1.65;
 const SATURN_RING_OUTER_RADIUS: f32 = 2.35;
 const SATURN_RING_MARKER_RADIUS: f32 = 0.025;
 
-const STARFIELD_STAR_COUNT: usize = 900;
-const STARFIELD_RADIUS: f32 = 320.0;
-const STARFIELD_MIN_SCALE: f32 = 0.018;
-const STARFIELD_MAX_SCALE: f32 = 0.060;
+const STARFIELD_STAR_COUNT: usize = 1800;
+const STARFIELD_RADIUS: f32 = 420.0;
+const STARFIELD_MIN_SCALE: f32 = 0.016;
+const STARFIELD_MAX_SCALE: f32 = 0.075;
+
+const SOLAR_SURFACE_FEATURE_COUNT: usize = 220;
+const SOLAR_SURFACE_RADIUS_FACTOR: f32 = 1.018;
+const SOLAR_SURFACE_MIN_SCALE: f32 = 0.055;
+const SOLAR_SURFACE_MAX_SCALE: f32 = 0.135;
+
+const SOLAR_CORONA_MARKERS_PER_SHELL: usize = 260;
+const SOLAR_CORONA_INNER_RADIUS_FACTOR: f32 = 1.28;
+const SOLAR_CORONA_OUTER_RADIUS_FACTOR: f32 = 1.86;
+const SOLAR_CORONA_INNER_SCALE: f32 = 0.080;
+const SOLAR_CORONA_OUTER_SCALE: f32 = 0.055;
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LabelVisibilityMode {
@@ -118,6 +129,20 @@ pub struct RingMarkerVisual {
 #[derive(Component, Debug, Clone, Copy)]
 pub struct StarfieldStarVisual;
 
+#[derive(Component, Debug, Clone, Copy)]
+pub struct SolarSurfaceFeatureVisual {
+    pub index: usize,
+    pub total: usize,
+    pub radius: f32,
+}
+
+#[derive(Component, Debug, Clone, Copy)]
+pub struct SolarCoronaMarkerVisual {
+    pub index: usize,
+    pub total: usize,
+    pub radius: f32,
+}
+
 pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
@@ -133,6 +158,8 @@ impl Plugin for SolarSystemRenderPlugin {
                     update_solar_system_visuals,
                     update_orbit_markers,
                     update_ring_markers,
+                    update_solar_surface_features,
+                    update_solar_corona_markers,
                     update_solar_body_labels,
                     apply_label_visibility,
                     apply_orbit_visibility,
@@ -146,44 +173,85 @@ fn spawn_solar_system_visuals(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    commands.insert_resource(ClearColor(Color::srgb(0.002, 0.004, 0.012)));
+
     commands.insert_resource(AmbientLight {
-        color: Color::WHITE,
-        brightness: 0.12,
+        color: Color::srgb(0.55, 0.62, 0.85),
+        brightness: 0.055,
         ..default()
     });
 
     let sphere = meshes.add(Sphere::new(1.0).mesh().uv(32, 18));
-    let orbit_marker_sphere = meshes.add(Sphere::new(1.0).mesh().uv(12, 8));
+    let small_sphere = meshes.add(Sphere::new(1.0).mesh().uv(12, 8));
 
     let planet_orbit_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.25, 0.45, 0.9),
-        emissive: LinearRgba::rgb(0.02, 0.05, 0.12),
+        base_color: Color::srgb(0.20, 0.42, 0.95),
+        emissive: LinearRgba::rgb(0.018, 0.040, 0.105),
         ..default()
     });
 
     let satellite_orbit_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.55, 0.55, 0.55),
-        emissive: LinearRgba::rgb(0.05, 0.05, 0.05),
+        base_color: Color::srgb(0.58, 0.58, 0.58),
+        emissive: LinearRgba::rgb(0.045, 0.045, 0.045),
         ..default()
     });
 
     let saturn_ring_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.86, 0.74, 0.54),
-        emissive: LinearRgba::rgb(0.06, 0.05, 0.035),
+        emissive: LinearRgba::rgb(0.070, 0.055, 0.035),
         ..default()
     });
 
-    let starfield_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.85, 0.90, 1.0),
-        emissive: LinearRgba::rgb(0.55, 0.60, 0.75),
-        ..default()
-    });
+    let starfield_materials = [
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(0.72, 0.80, 1.0),
+            emissive: LinearRgba::rgb(0.42, 0.50, 0.88),
+            ..default()
+        }),
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(1.0, 0.93, 0.78),
+            emissive: LinearRgba::rgb(0.55, 0.48, 0.32),
+            ..default()
+        }),
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(0.95, 0.97, 1.0),
+            emissive: LinearRgba::rgb(0.68, 0.72, 0.95),
+            ..default()
+        }),
+    ];
 
-    spawn_starfield(
-        &mut commands,
-        orbit_marker_sphere.clone(),
-        starfield_material.clone(),
-    );
+    let solar_surface_materials = [
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(1.0, 0.68, 0.14),
+            emissive: LinearRgba::rgb(1.35, 0.58, 0.10),
+            ..default()
+        }),
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(1.0, 0.88, 0.34),
+            emissive: LinearRgba::rgb(1.60, 0.88, 0.18),
+            ..default()
+        }),
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(0.95, 0.32, 0.06),
+            emissive: LinearRgba::rgb(0.90, 0.20, 0.035),
+            ..default()
+        }),
+    ];
+
+    let solar_corona_materials = [
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(1.0, 0.68, 0.18),
+            emissive: LinearRgba::rgb(1.75, 0.62, 0.12),
+            ..default()
+        }),
+        materials.add(StandardMaterial {
+            base_color: Color::srgb(1.0, 0.86, 0.42),
+            emissive: LinearRgba::rgb(1.20, 0.72, 0.22),
+            ..default()
+        }),
+    ];
+
+    spawn_starfield(&mut commands, small_sphere.clone(), &starfield_materials);
 
     for body in SOLAR_SYSTEM_BODIES.iter() {
         let material = materials.add(StandardMaterial {
@@ -202,6 +270,22 @@ fn spawn_solar_system_visuals(
             },
         ));
 
+        if body.id == BodyId::Sun {
+            spawn_solar_surface_features(
+                &mut commands,
+                small_sphere.clone(),
+                &solar_surface_materials,
+                body.visual_radius,
+            );
+
+            spawn_solar_corona_markers(
+                &mut commands,
+                small_sphere.clone(),
+                &solar_corona_materials,
+                body.visual_radius,
+            );
+        }
+
         spawn_label(
             &mut commands,
             body.name,
@@ -213,7 +297,7 @@ fn spawn_solar_system_visuals(
         if has_ring_visual(body.id) {
             spawn_ring_markers(
                 &mut commands,
-                orbit_marker_sphere.clone(),
+                small_sphere.clone(),
                 saturn_ring_material.clone(),
                 body.id,
             );
@@ -230,7 +314,7 @@ fn spawn_solar_system_visuals(
 
             for index in 0..total {
                 commands.spawn((
-                    Mesh3d(orbit_marker_sphere.clone()),
+                    Mesh3d(small_sphere.clone()),
                     MeshMaterial3d(orbit_material.clone()),
                     Transform::from_scale(Vec3::splat(marker_radius)),
                     Visibility::Visible,
@@ -246,8 +330,8 @@ fn spawn_solar_system_visuals(
 
     commands.spawn((
         PointLight {
-            intensity: 12_000_000.0,
-            range: 1_000.0,
+            intensity: 28_000_000.0,
+            range: 1_200.0,
             shadows_enabled: true,
             ..default()
         },
@@ -258,36 +342,84 @@ fn spawn_solar_system_visuals(
 fn spawn_starfield(
     commands: &mut Commands,
     mesh: Handle<Mesh>,
-    material: Handle<StandardMaterial>,
+    materials: &[Handle<StandardMaterial>; 3],
 ) {
     for index in 0..STARFIELD_STAR_COUNT {
         let position = starfield_position(index);
         let scale = starfield_scale(index);
+        let material = materials[starfield_material_index(index)].clone();
 
         commands.spawn((
             Mesh3d(mesh.clone()),
-            MeshMaterial3d(material.clone()),
+            MeshMaterial3d(material),
             Transform::from_translation(position).with_scale(Vec3::splat(scale)),
             StarfieldStarVisual,
         ));
     }
 }
 
-fn starfield_position(index: usize) -> Vec3 {
-    let i = index as f32 + 0.5;
+fn spawn_solar_surface_features(
+    commands: &mut Commands,
+    mesh: Handle<Mesh>,
+    materials: &[Handle<StandardMaterial>; 3],
+    sun_visual_radius: f32,
+) {
+    for index in 0..SOLAR_SURFACE_FEATURE_COUNT {
+        let direction = solar_surface_direction(index, 0.0);
+        let position = direction * sun_visual_radius * SOLAR_SURFACE_RADIUS_FACTOR;
+        let scale = solar_surface_feature_scale(index);
+        let material = materials[solar_surface_material_index(index)].clone();
 
-    let golden_angle = std::f32::consts::PI * (3.0 - 5.0_f32.sqrt());
-    let y = 1.0 - (i / STARFIELD_STAR_COUNT as f32) * 2.0;
-    let radius = (1.0 - y * y).sqrt();
-    let theta = golden_angle * i;
-
-    Vec3::new(theta.cos() * radius, y, theta.sin() * radius) * STARFIELD_RADIUS
+        commands.spawn((
+            Mesh3d(mesh.clone()),
+            MeshMaterial3d(material),
+            Transform::from_translation(position).with_scale(Vec3::splat(scale)),
+            SolarSurfaceFeatureVisual {
+                index,
+                total: SOLAR_SURFACE_FEATURE_COUNT,
+                radius: sun_visual_radius * SOLAR_SURFACE_RADIUS_FACTOR,
+            },
+        ));
+    }
 }
 
-fn starfield_scale(index: usize) -> f32 {
-    let noise = ((index as f32 * 12.9898).sin() * 43_758.547).fract().abs();
+fn spawn_solar_corona_markers(
+    commands: &mut Commands,
+    mesh: Handle<Mesh>,
+    materials: &[Handle<StandardMaterial>; 2],
+    sun_visual_radius: f32,
+) {
+    for (shell_index, radius_factor) in [
+        SOLAR_CORONA_INNER_RADIUS_FACTOR,
+        SOLAR_CORONA_OUTER_RADIUS_FACTOR,
+    ]
+    .iter()
+    .enumerate()
+    {
+        let radius = sun_visual_radius * radius_factor;
+        let scale = if shell_index == 0 {
+            SOLAR_CORONA_INNER_SCALE
+        } else {
+            SOLAR_CORONA_OUTER_SCALE
+        };
 
-    STARFIELD_MIN_SCALE + (STARFIELD_MAX_SCALE - STARFIELD_MIN_SCALE) * noise
+        for index in 0..SOLAR_CORONA_MARKERS_PER_SHELL {
+            let direction = solar_corona_direction(index, shell_index, 0.0);
+            let position = direction * radius;
+            let material = materials[shell_index].clone();
+
+            commands.spawn((
+                Mesh3d(mesh.clone()),
+                MeshMaterial3d(material),
+                Transform::from_translation(position).with_scale(Vec3::splat(scale)),
+                SolarCoronaMarkerVisual {
+                    index,
+                    total: SOLAR_CORONA_MARKERS_PER_SHELL,
+                    radius,
+                },
+            ));
+        }
+    }
 }
 
 fn spawn_ring_markers(
@@ -336,7 +468,7 @@ fn keyboard_orbit_controls(
 
 fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
     match body.class {
-        BodyClass::Star => LinearRgba::rgb(1.0, 0.55, 0.08),
+        BodyClass::Star => LinearRgba::rgb(2.25, 1.05, 0.22),
         _ => LinearRgba::BLACK,
     }
 }
@@ -467,6 +599,46 @@ fn update_ring_markers(
         );
 
         transform.translation = parent_position + ring_position;
+    }
+}
+
+fn update_solar_surface_features(
+    simulation_clock: Res<SimulationClock>,
+    mut query: Query<(&SolarSurfaceFeatureVisual, &mut Transform)>,
+) {
+    let days_since_j2000 = simulation_clock.0.days_since_j2000();
+    let phase = days_since_j2000 as f32 * 0.018;
+
+    let Some(sun_position) = body_visual_position(BodyId::Sun, days_since_j2000) else {
+        return;
+    };
+
+    for (feature, mut transform) in query.iter_mut() {
+        let direction = solar_surface_direction(feature.index, phase);
+        transform.translation = sun_position + direction * feature.radius;
+    }
+}
+
+fn update_solar_corona_markers(
+    simulation_clock: Res<SimulationClock>,
+    mut query: Query<(&SolarCoronaMarkerVisual, &mut Transform)>,
+) {
+    let days_since_j2000 = simulation_clock.0.days_since_j2000();
+    let phase = days_since_j2000 as f32 * 0.010;
+
+    let Some(sun_position) = body_visual_position(BodyId::Sun, days_since_j2000) else {
+        return;
+    };
+
+    for (corona, mut transform) in query.iter_mut() {
+        let shell_hint = if corona.radius < sun_visual_radius() * 1.5 {
+            0
+        } else {
+            1
+        };
+
+        let direction = solar_corona_direction(corona.index, shell_hint, phase);
+        transform.translation = sun_position + direction * corona.radius;
     }
 }
 
@@ -611,6 +783,80 @@ fn orbit_marker_radius(orbit: OrbitDefinition) -> f32 {
     }
 }
 
+fn starfield_position(index: usize) -> Vec3 {
+    let i = index as f32 + 0.5;
+
+    let golden_angle = std::f32::consts::PI * (3.0 - 5.0_f32.sqrt());
+    let y = 1.0 - (i / STARFIELD_STAR_COUNT as f32) * 2.0;
+    let radius = (1.0 - y * y).sqrt();
+    let theta = golden_angle * i;
+
+    Vec3::new(theta.cos() * radius, y, theta.sin() * radius) * STARFIELD_RADIUS
+}
+
+fn starfield_scale(index: usize) -> f32 {
+    let noise = deterministic_noise(index, 12.9898);
+
+    STARFIELD_MIN_SCALE + (STARFIELD_MAX_SCALE - STARFIELD_MIN_SCALE) * noise
+}
+
+fn starfield_material_index(index: usize) -> usize {
+    match index % 11 {
+        0 | 5 => 1,
+        1 | 6 | 9 => 0,
+        _ => 2,
+    }
+}
+
+fn deterministic_noise(index: usize, seed: f32) -> f32 {
+    ((index as f32 * seed).sin() * 43_758.547).fract().abs()
+}
+
+fn solar_surface_direction(index: usize, phase: f32) -> Vec3 {
+    spherical_fibonacci_direction(index, SOLAR_SURFACE_FEATURE_COUNT, phase)
+}
+
+fn solar_corona_direction(index: usize, shell_hint: usize, phase: f32) -> Vec3 {
+    spherical_fibonacci_direction(
+        index + shell_hint * 17,
+        SOLAR_CORONA_MARKERS_PER_SHELL,
+        phase * (1.0 + shell_hint as f32 * 0.35),
+    )
+}
+
+fn spherical_fibonacci_direction(index: usize, total: usize, phase: f32) -> Vec3 {
+    let i = index as f32 + 0.5;
+    let golden_angle = std::f32::consts::PI * (3.0 - 5.0_f32.sqrt());
+
+    let y = 1.0 - (i / total as f32) * 2.0;
+    let radius = (1.0 - y * y).sqrt();
+    let theta = golden_angle * i + phase;
+
+    Vec3::new(theta.cos() * radius, y, theta.sin() * radius).normalize()
+}
+
+fn solar_surface_feature_scale(index: usize) -> f32 {
+    let noise = deterministic_noise(index, 21.371);
+
+    SOLAR_SURFACE_MIN_SCALE + (SOLAR_SURFACE_MAX_SCALE - SOLAR_SURFACE_MIN_SCALE) * noise
+}
+
+fn solar_surface_material_index(index: usize) -> usize {
+    match index % 7 {
+        0 => 2,
+        1 | 4 => 1,
+        _ => 0,
+    }
+}
+
+fn sun_visual_radius() -> f32 {
+    SOLAR_SYSTEM_BODIES
+        .iter()
+        .find(|body| body.id == BodyId::Sun)
+        .map(|body| body.visual_radius)
+        .unwrap_or(3.5)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -629,14 +875,6 @@ mod tests {
     }
 
     #[test]
-    fn major_labels_include_planets_but_not_moon() {
-        assert!(is_major_body_label(BodyId::Sun));
-        assert!(is_major_body_label(BodyId::Earth));
-        assert!(is_major_body_label(BodyId::Jupiter));
-        assert!(!is_major_body_label(BodyId::Moon));
-    }
-
-    #[test]
     fn orbit_visibility_mode_cycles_in_expected_order() {
         assert_eq!(
             OrbitVisibilityMode::All.next(),
@@ -650,34 +888,18 @@ mod tests {
     }
 
     #[test]
+    fn major_labels_include_planets_but_not_moon() {
+        assert!(is_major_body_label(BodyId::Sun));
+        assert!(is_major_body_label(BodyId::Earth));
+        assert!(is_major_body_label(BodyId::Jupiter));
+        assert!(!is_major_body_label(BodyId::Moon));
+    }
+
+    #[test]
     fn planetary_orbits_exclude_moon_orbit() {
         assert!(is_planetary_orbit(BodyId::Earth));
         assert!(is_planetary_orbit(BodyId::Jupiter));
         assert!(!is_planetary_orbit(BodyId::Moon));
-    }
-
-    #[test]
-    fn starfield_constants_are_valid() {
-        assert!(STARFIELD_STAR_COUNT >= 256);
-        assert!(STARFIELD_RADIUS > 100.0);
-        assert!(STARFIELD_MAX_SCALE > STARFIELD_MIN_SCALE);
-        assert!(STARFIELD_MIN_SCALE > 0.0);
-    }
-
-    #[test]
-    fn starfield_positions_stay_on_shell() {
-        let position = starfield_position(0);
-        let distance = position.length();
-
-        assert!((distance - STARFIELD_RADIUS).abs() < 0.01);
-    }
-
-    #[test]
-    fn starfield_scale_stays_in_range() {
-        let scale = starfield_scale(42);
-
-        assert!(scale >= STARFIELD_MIN_SCALE);
-        assert!(scale <= STARFIELD_MAX_SCALE);
     }
 
     #[test]
@@ -712,6 +934,81 @@ mod tests {
         assert!(SATURN_RING_INNER_RADIUS > 0.0);
         assert!(SATURN_RING_OUTER_RADIUS > SATURN_RING_INNER_RADIUS);
         assert!(SATURN_RING_MARKER_RADIUS > 0.0);
+    }
+
+    #[test]
+    fn starfield_constants_are_valid() {
+        assert!(STARFIELD_STAR_COUNT >= 900);
+        assert!(STARFIELD_RADIUS > 300.0);
+        assert!(STARFIELD_MAX_SCALE > STARFIELD_MIN_SCALE);
+        assert!(STARFIELD_MIN_SCALE > 0.0);
+    }
+
+    #[test]
+    fn starfield_positions_stay_on_shell() {
+        let position = starfield_position(0);
+        let distance = position.length();
+
+        assert!((distance - STARFIELD_RADIUS).abs() < 0.01);
+    }
+
+    #[test]
+    fn starfield_scale_stays_in_range() {
+        let scale = starfield_scale(42);
+
+        assert!(scale >= STARFIELD_MIN_SCALE);
+        assert!(scale <= STARFIELD_MAX_SCALE);
+    }
+
+    #[test]
+    fn starfield_material_index_stays_in_range() {
+        for index in 0..128 {
+            assert!(starfield_material_index(index) < 3);
+        }
+    }
+
+    #[test]
+    fn solar_surface_constants_are_valid() {
+        assert!(SOLAR_SURFACE_FEATURE_COUNT >= 128);
+        assert!(SOLAR_SURFACE_RADIUS_FACTOR > 1.0);
+        assert!(SOLAR_SURFACE_MAX_SCALE > SOLAR_SURFACE_MIN_SCALE);
+    }
+
+    #[test]
+    fn solar_corona_constants_are_valid() {
+        assert!(SOLAR_CORONA_MARKERS_PER_SHELL >= 128);
+        assert!(SOLAR_CORONA_INNER_RADIUS_FACTOR > 1.0);
+        assert!(SOLAR_CORONA_OUTER_RADIUS_FACTOR > SOLAR_CORONA_INNER_RADIUS_FACTOR);
+        assert!(SOLAR_CORONA_INNER_SCALE > SOLAR_CORONA_OUTER_SCALE);
+    }
+
+    #[test]
+    fn solar_surface_direction_is_normalized() {
+        let direction = solar_surface_direction(12, 0.25);
+
+        assert!((direction.length() - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn solar_corona_direction_is_normalized() {
+        let direction = solar_corona_direction(12, 1, 0.25);
+
+        assert!((direction.length() - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn solar_surface_feature_scale_stays_in_range() {
+        let scale = solar_surface_feature_scale(17);
+
+        assert!(scale >= SOLAR_SURFACE_MIN_SCALE);
+        assert!(scale <= SOLAR_SURFACE_MAX_SCALE);
+    }
+
+    #[test]
+    fn solar_surface_material_index_stays_in_range() {
+        for index in 0..64 {
+            assert!(solar_surface_material_index(index) < 3);
+        }
     }
 
     #[test]
