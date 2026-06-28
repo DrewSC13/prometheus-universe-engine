@@ -1,16 +1,34 @@
 use bevy::prelude::*;
 
+use crate::render::solar_system::{LabelVisibilityMode, OrbitVisibilityMode};
+use crate::simulation::bodies::{orbiting_bodies, root_bodies, SOLAR_SYSTEM_BODIES};
 use crate::time::{SimulationClock, TimeDirection};
 
 #[derive(Component, Debug)]
 pub struct SimulationHudText;
 
+#[derive(Resource, Debug, Clone, Copy)]
+pub struct HudVisibility {
+    pub visible: bool,
+    pub compact: bool,
+}
+
+impl Default for HudVisibility {
+    fn default() -> Self {
+        Self {
+            visible: true,
+            compact: false,
+        }
+    }
+}
+
 pub struct SimulationHudPlugin;
 
 impl Plugin for SimulationHudPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_simulation_hud)
-            .add_systems(Update, update_simulation_hud);
+        app.insert_resource(HudVisibility::default())
+            .add_systems(Startup, spawn_simulation_hud)
+            .add_systems(Update, (update_simulation_hud, toggle_hud_visibility));
     }
 }
 
@@ -32,8 +50,26 @@ fn spawn_simulation_hud(mut commands: Commands) {
     ));
 }
 
+fn toggle_hud_visibility(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut hud_visibility: ResMut<HudVisibility>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyH) {
+        hud_visibility.visible = !hud_visibility.visible;
+        info!("HUD visible: {}", hud_visibility.visible);
+    }
+
+    if keyboard.just_pressed(KeyCode::KeyM) {
+        hud_visibility.compact = !hud_visibility.compact;
+        info!("HUD compact mode: {}", hud_visibility.compact);
+    }
+}
+
 fn update_simulation_hud(
     simulation_clock: Res<SimulationClock>,
+    label_visibility_mode: Option<Res<LabelVisibilityMode>>,
+    orbit_visibility_mode: Option<Res<OrbitVisibilityMode>>,
+    hud_visibility: Res<HudVisibility>,
     mut query: Query<&mut Text, With<SimulationHudText>>,
 ) {
     let simulation_time = simulation_clock.0;
@@ -45,10 +81,49 @@ fn update_simulation_hud(
 
     let paused = if simulation_time.paused { "yes" } else { "no" };
 
+    let total_bodies = SOLAR_SYSTEM_BODIES.len();
+    let root_body_count = root_bodies().count();
+    let orbiting_body_count = orbiting_bodies().count();
+
+    let label_mode = label_visibility_mode
+        .as_deref()
+        .map(LabelVisibilityMode::as_str)
+        .unwrap_or("unknown");
+
+    let orbit_mode = orbit_visibility_mode
+        .as_deref()
+        .map(OrbitVisibilityMode::as_str)
+        .unwrap_or("unknown");
+
     for mut text in query.iter_mut() {
+        if !hud_visibility.visible {
+            text.0.clear();
+            continue;
+        }
+
+        if hud_visibility.compact {
+            text.0 = format!(
+                "Prometheus Universe Engine | Fase 1 | JD {:.2} | x{:.0} | {} | pausa: {} | H HUD | M modo",
+                simulation_time.jd_tdb,
+                simulation_time.time_scale,
+                direction,
+                paused,
+            );
+            continue;
+        }
+
         text.0 = format!(
             "Prometheus Universe Engine\n\
-             Fase 0: Sol-Tierra-Luna\n\
+             Fase 1: Sistema Solar catalogado\n\
+             \n\
+             Catalogo:\n\
+             Cuerpos totales: {}\n\
+             Cuerpos raiz: {}\n\
+             Cuerpos orbitando: {}\n\
+             Etiquetas: {}\n\
+             Orbitas: {}\n\
+             \n\
+             Tiempo:\n\
              JD TDB: {:.5}\n\
              Dias desde J2000: {:.2}\n\
              Escala temporal: x{:.0}\n\
@@ -59,7 +134,19 @@ fn update_simulation_hud(
              Space = pausa/reanuda\n\
              1-6 = velocidad\n\
              B = invertir tiempo\n\
-             R = reset J2000",
+             R = reset J2000\n\
+             L = etiquetas\n\
+             O = orbitas\n\
+             C = vista general\n\
+             V = vista lejana\n\
+             F = sistema interior\n\
+             H = mostrar/ocultar HUD\n\
+             M = HUD compacto",
+            total_bodies,
+            root_body_count,
+            orbiting_body_count,
+            label_mode,
+            orbit_mode,
             simulation_time.jd_tdb,
             simulation_time.days_since_j2000(),
             simulation_time.time_scale,
