@@ -2,41 +2,33 @@ use bevy::math::primitives::Sphere;
 use bevy::prelude::*;
 
 use crate::coordinates::{GlobalPosition, GlobalPositionComponent};
-use crate::simulation::solar_system::{solar_earth_moon_state, CelestialBodyKind};
+use crate::simulation::bodies::{
+    BodyClass, BodyId, CelestialBodyDefinition, OrbitDefinition, SOLAR_SYSTEM_BODIES,
+};
+use crate::simulation::catalog::{body_position_meters, solar_system_runtime_state};
 use crate::time::SimulationClock;
 
-const SUN_VISUAL_RADIUS: f32 = 3.0;
-const EARTH_VISUAL_RADIUS: f32 = 0.65;
-const MOON_VISUAL_RADIUS: f32 = 0.22;
+const AU_METERS: f64 = 149_597_870_700.0;
 
-const EARTH_ORBIT_VISUAL_RADIUS: f32 = 18.0;
-const MOON_ORBIT_VISUAL_RADIUS: f32 = 2.4;
+const PLANET_ORBIT_MARKERS: usize = 128;
+const SATELLITE_ORBIT_MARKERS: usize = 64;
 
-const EARTH_ORBIT_MARKERS: usize = 128;
-const MOON_ORBIT_MARKERS: usize = 64;
-
-const EARTH_ORBIT_MARKER_RADIUS: f32 = 0.035;
-const MOON_ORBIT_MARKER_RADIUS: f32 = 0.025;
+const PLANET_ORBIT_MARKER_RADIUS: f32 = 0.025;
+const SATELLITE_ORBIT_MARKER_RADIUS: f32 = 0.020;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SolarBodyVisual {
-    pub kind: CelestialBodyKind,
+    pub id: BodyId,
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SolarBodyLabel {
-    pub kind: CelestialBodyKind,
-}
-
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OrbitMarkerKind {
-    EarthAroundSun,
-    MoonAroundEarth,
+    pub id: BodyId,
 }
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct OrbitMarkerVisual {
-    pub kind: OrbitMarkerKind,
+    pub body_id: BodyId,
     pub index: usize,
     pub total: usize,
 }
@@ -45,11 +37,11 @@ pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_solar_earth_moon_visuals)
+        app.add_systems(Startup, spawn_solar_system_visuals)
             .add_systems(
                 Update,
                 (
-                    update_solar_earth_moon_visuals,
+                    update_solar_system_visuals,
                     update_orbit_markers,
                     update_solar_body_labels,
                 ),
@@ -57,7 +49,7 @@ impl Plugin for SolarSystemRenderPlugin {
     }
 }
 
-fn spawn_solar_earth_moon_visuals(
+fn spawn_solar_system_visuals(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -71,99 +63,60 @@ fn spawn_solar_earth_moon_visuals(
     let sphere = meshes.add(Sphere::new(1.0).mesh().uv(32, 18));
     let orbit_marker_sphere = meshes.add(Sphere::new(1.0).mesh().uv(12, 8));
 
-    let sun_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(1.0, 0.82, 0.18),
-        emissive: LinearRgba::rgb(1.0, 0.55, 0.08),
-        ..default()
-    });
-
-    let earth_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.08, 0.32, 1.0),
-        ..default()
-    });
-
-    let moon_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.68, 0.68, 0.68),
-        ..default()
-    });
-
-    let earth_orbit_material = materials.add(StandardMaterial {
+    let planet_orbit_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.25, 0.45, 0.9),
         emissive: LinearRgba::rgb(0.02, 0.05, 0.12),
         ..default()
     });
 
-    let moon_orbit_material = materials.add(StandardMaterial {
+    let satellite_orbit_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.55, 0.55, 0.55),
         emissive: LinearRgba::rgb(0.05, 0.05, 0.05),
         ..default()
     });
 
-    commands.spawn((
-        Mesh3d(sphere.clone()),
-        MeshMaterial3d(sun_material),
-        Transform::from_scale(Vec3::splat(SUN_VISUAL_RADIUS)),
-        SolarBodyVisual {
-            kind: CelestialBodyKind::Sun,
-        },
-        GlobalPositionComponent {
-            position: GlobalPosition::ZERO,
-        },
-    ));
+    for body in SOLAR_SYSTEM_BODIES {
+        let material = materials.add(StandardMaterial {
+            base_color: Color::srgb(body.color_srgb[0], body.color_srgb[1], body.color_srgb[2]),
+            emissive: body_emissive_color(body),
+            ..default()
+        });
 
-    commands.spawn((
-        Mesh3d(sphere.clone()),
-        MeshMaterial3d(earth_material),
-        Transform::from_scale(Vec3::splat(EARTH_VISUAL_RADIUS)),
-        SolarBodyVisual {
-            kind: CelestialBodyKind::Earth,
-        },
-        GlobalPositionComponent {
-            position: GlobalPosition::ZERO,
-        },
-    ));
-
-    commands.spawn((
-        Mesh3d(sphere),
-        MeshMaterial3d(moon_material),
-        Transform::from_scale(Vec3::splat(MOON_VISUAL_RADIUS)),
-        SolarBodyVisual {
-            kind: CelestialBodyKind::Moon,
-        },
-        GlobalPositionComponent {
-            position: GlobalPosition::ZERO,
-        },
-    ));
-
-    for index in 0..EARTH_ORBIT_MARKERS {
         commands.spawn((
-            Mesh3d(orbit_marker_sphere.clone()),
-            MeshMaterial3d(earth_orbit_material.clone()),
-            Transform::from_scale(Vec3::splat(EARTH_ORBIT_MARKER_RADIUS)),
-            OrbitMarkerVisual {
-                kind: OrbitMarkerKind::EarthAroundSun,
-                index,
-                total: EARTH_ORBIT_MARKERS,
+            Mesh3d(sphere.clone()),
+            MeshMaterial3d(material),
+            Transform::from_scale(Vec3::splat(body.visual_radius)),
+            SolarBodyVisual { id: body.id },
+            GlobalPositionComponent {
+                position: GlobalPosition::ZERO,
             },
         ));
-    }
 
-    for index in 0..MOON_ORBIT_MARKERS {
-        commands.spawn((
-            Mesh3d(orbit_marker_sphere.clone()),
-            MeshMaterial3d(moon_orbit_material.clone()),
-            Transform::from_scale(Vec3::splat(MOON_ORBIT_MARKER_RADIUS)),
-            OrbitMarkerVisual {
-                kind: OrbitMarkerKind::MoonAroundEarth,
-                index,
-                total: MOON_ORBIT_MARKERS,
-            },
-        ));
-    }
+        spawn_label(&mut commands, body.name, body.id);
 
-    spawn_label(&mut commands, "Sol", CelestialBodyKind::Sun);
-    spawn_label(&mut commands, "Tierra", CelestialBodyKind::Earth);
-    spawn_label(&mut commands, "Luna", CelestialBodyKind::Moon);
+        if let Some(orbit) = body.orbit {
+            let total = orbit_marker_count(orbit);
+            let marker_radius = orbit_marker_radius(orbit);
+            let orbit_material = if orbit.parent == BodyId::Sun {
+                planet_orbit_material.clone()
+            } else {
+                satellite_orbit_material.clone()
+            };
+
+            for index in 0..total {
+                commands.spawn((
+                    Mesh3d(orbit_marker_sphere.clone()),
+                    MeshMaterial3d(orbit_material.clone()),
+                    Transform::from_scale(Vec3::splat(marker_radius)),
+                    OrbitMarkerVisual {
+                        body_id: body.id,
+                        index,
+                        total,
+                    },
+                ));
+            }
+        }
+    }
 
     commands.spawn((
         PointLight {
@@ -176,20 +129,27 @@ fn spawn_solar_earth_moon_visuals(
     ));
 }
 
-fn spawn_label(commands: &mut Commands, text: &'static str, kind: CelestialBodyKind) {
+fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
+    match body.class {
+        BodyClass::Star => LinearRgba::rgb(1.0, 0.55, 0.08),
+        _ => LinearRgba::BLACK,
+    }
+}
+
+fn spawn_label(commands: &mut Commands, text: &'static str, id: BodyId) {
     commands.spawn((
         Text2d::new(text),
         TextFont {
-            font_size: 22.0,
+            font_size: 18.0,
             ..default()
         },
         TextColor(Color::WHITE),
         Transform::from_xyz(0.0, 0.0, 0.0),
-        SolarBodyLabel { kind },
+        SolarBodyLabel { id },
     ));
 }
 
-fn update_solar_earth_moon_visuals(
+fn update_solar_system_visuals(
     simulation_clock: Res<SimulationClock>,
     mut query: Query<(
         &SolarBodyVisual,
@@ -198,34 +158,20 @@ fn update_solar_earth_moon_visuals(
     )>,
 ) {
     let days_since_j2000 = simulation_clock.0.days_since_j2000();
-    let state = solar_earth_moon_state(days_since_j2000);
+    let state = solar_system_runtime_state(days_since_j2000);
 
-    let earth_direction = state.earth_position_meters.normalize_or_zero().as_vec3();
-
-    let moon_relative_physical = state.moon_position_meters - state.earth_position_meters;
-    let moon_direction = moon_relative_physical.normalize_or_zero().as_vec3();
-
-    let earth_visual_position = earth_direction * EARTH_ORBIT_VISUAL_RADIUS;
-    let moon_visual_position = earth_visual_position + moon_direction * MOON_ORBIT_VISUAL_RADIUS;
-
-    for (body, mut global_position, mut transform) in query.iter_mut() {
-        let physical_position = match body.kind {
-            CelestialBodyKind::Sun => state.sun_position_meters,
-            CelestialBodyKind::Earth => state.earth_position_meters,
-            CelestialBodyKind::Moon => state.moon_position_meters,
-        };
-
-        let visual_position = match body.kind {
-            CelestialBodyKind::Sun => Vec3::ZERO,
-            CelestialBodyKind::Earth => earth_visual_position,
-            CelestialBodyKind::Moon => moon_visual_position,
+    for (body_visual, mut global_position, mut transform) in query.iter_mut() {
+        let Some(runtime_body) = state.iter().find(|body| body.id == body_visual.id) else {
+            continue;
         };
 
         global_position.position = GlobalPosition {
-            meters_from_origin: physical_position,
+            meters_from_origin: runtime_body.physical_position_meters,
         };
 
-        transform.translation = visual_position;
+        if let Some(visual_position) = body_visual_position(body_visual.id, days_since_j2000) {
+            transform.translation = visual_position;
+        }
     }
 }
 
@@ -234,22 +180,29 @@ fn update_orbit_markers(
     mut query: Query<(&OrbitMarkerVisual, &mut Transform)>,
 ) {
     let days_since_j2000 = simulation_clock.0.days_since_j2000();
-    let state = solar_earth_moon_state(days_since_j2000);
-
-    let earth_direction = state.earth_position_meters.normalize_or_zero().as_vec3();
-    let earth_visual_position = earth_direction * EARTH_ORBIT_VISUAL_RADIUS;
 
     for (marker, mut transform) in query.iter_mut() {
-        let angle = std::f32::consts::TAU * marker.index as f32 / marker.total as f32;
-
-        let circle_position = Vec3::new(angle.cos(), 0.0, angle.sin());
-
-        transform.translation = match marker.kind {
-            OrbitMarkerKind::EarthAroundSun => circle_position * EARTH_ORBIT_VISUAL_RADIUS,
-            OrbitMarkerKind::MoonAroundEarth => {
-                earth_visual_position + circle_position * MOON_ORBIT_VISUAL_RADIUS
-            }
+        let Some(body) = SOLAR_SYSTEM_BODIES
+            .iter()
+            .find(|body| body.id == marker.body_id)
+        else {
+            continue;
         };
+
+        let Some(orbit) = body.orbit else {
+            continue;
+        };
+
+        let Some(parent_visual_position) = body_visual_position(orbit.parent, days_since_j2000)
+        else {
+            continue;
+        };
+
+        let angle = std::f32::consts::TAU * marker.index as f32 / marker.total as f32;
+        let circle_position = Vec3::new(angle.cos(), 0.0, angle.sin());
+        let visual_radius = educational_orbit_radius(orbit);
+
+        transform.translation = parent_visual_position + circle_position * visual_radius;
     }
 }
 
@@ -258,21 +211,63 @@ fn update_solar_body_labels(
     mut query: Query<(&SolarBodyLabel, &mut Transform)>,
 ) {
     let days_since_j2000 = simulation_clock.0.days_since_j2000();
-    let state = solar_earth_moon_state(days_since_j2000);
-
-    let earth_direction = state.earth_position_meters.normalize_or_zero().as_vec3();
-
-    let moon_relative_physical = state.moon_position_meters - state.earth_position_meters;
-    let moon_direction = moon_relative_physical.normalize_or_zero().as_vec3();
-
-    let earth_visual_position = earth_direction * EARTH_ORBIT_VISUAL_RADIUS;
-    let moon_visual_position = earth_visual_position + moon_direction * MOON_ORBIT_VISUAL_RADIUS;
 
     for (label, mut transform) in query.iter_mut() {
-        transform.translation = match label.kind {
-            CelestialBodyKind::Sun => Vec3::new(0.0, SUN_VISUAL_RADIUS + 1.2, 0.0),
-            CelestialBodyKind::Earth => earth_visual_position + Vec3::new(0.0, 1.2, 0.0),
-            CelestialBodyKind::Moon => moon_visual_position + Vec3::new(0.0, 0.7, 0.0),
+        let Some(body) = SOLAR_SYSTEM_BODIES.iter().find(|body| body.id == label.id) else {
+            continue;
         };
+
+        let Some(visual_position) = body_visual_position(label.id, days_since_j2000) else {
+            continue;
+        };
+
+        transform.translation = visual_position + Vec3::new(0.0, body.visual_radius + 0.7, 0.0);
+    }
+}
+
+fn body_visual_position(id: BodyId, days_since_j2000: f64) -> Option<Vec3> {
+    let body = SOLAR_SYSTEM_BODIES.iter().find(|body| body.id == id)?;
+
+    match body.orbit {
+        Some(orbit) => {
+            let parent_visual_position = body_visual_position(orbit.parent, days_since_j2000)?;
+
+            let body_physical_position = body_position_meters(id, days_since_j2000)?;
+            let parent_physical_position = body_position_meters(orbit.parent, days_since_j2000)?;
+
+            let physical_direction =
+                (body_physical_position - parent_physical_position).normalize_or_zero();
+
+            Some(
+                parent_visual_position
+                    + physical_direction.as_vec3() * educational_orbit_radius(orbit),
+            )
+        }
+        None => Some(Vec3::ZERO),
+    }
+}
+
+fn educational_orbit_radius(orbit: OrbitDefinition) -> f32 {
+    if orbit.parent == BodyId::Sun {
+        let au = orbit.semi_major_axis_meters / AU_METERS;
+        10.0 + au.sqrt() as f32 * 10.0
+    } else {
+        2.6
+    }
+}
+
+fn orbit_marker_count(orbit: OrbitDefinition) -> usize {
+    if orbit.parent == BodyId::Sun {
+        PLANET_ORBIT_MARKERS
+    } else {
+        SATELLITE_ORBIT_MARKERS
+    }
+}
+
+fn orbit_marker_radius(orbit: OrbitDefinition) -> f32 {
+    if orbit.parent == BodyId::Sun {
+        PLANET_ORBIT_MARKER_RADIUS
+    } else {
+        SATELLITE_ORBIT_MARKER_RADIUS
     }
 }
