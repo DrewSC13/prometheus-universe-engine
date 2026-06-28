@@ -21,6 +21,18 @@ const REAL_SOLAR_HALO_ALPHA_VALUES: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
 const REAL_SOLAR_LIGHT_INTENSITY: f32 = 90_000.0;
 const REAL_SOLAR_LIGHT_RANGE: f32 = 420.0;
 
+const EARTH_LANDMASS_SAMPLE_COUNT: usize = 384;
+const EARTH_LANDMASS_RADIUS_FACTOR: f32 = 1.019;
+const EARTH_LANDMASS_MIN_SCALE: f32 = 0.016;
+const EARTH_LANDMASS_MAX_SCALE: f32 = 0.050;
+const EARTH_LANDMASS_ROTATION_SPEED: f32 = 0.034;
+
+const EARTH_LANDMASS_CLUSTER_COUNT: usize = 7;
+const EARTH_LANDMASS_CLUSTER_SEEDS: [usize; EARTH_LANDMASS_CLUSTER_COUNT] =
+    [7, 19, 42, 86, 133, 211, 307];
+const EARTH_LANDMASS_CLUSTER_THRESHOLDS: [f32; EARTH_LANDMASS_CLUSTER_COUNT] =
+    [0.775, 0.790, 0.805, 0.782, 0.812, 0.795, 0.785];
+
 const EARTH_ATMOSPHERE_LAYER_COUNT: usize = 3;
 const EARTH_ATMOSPHERE_RADIUS_FACTORS: [f32; EARTH_ATMOSPHERE_LAYER_COUNT] = [1.045, 1.075, 1.115];
 const EARTH_ATMOSPHERE_ALPHA_VALUES: [f32; EARTH_ATMOSPHERE_LAYER_COUNT] = [0.115, 0.060, 0.026];
@@ -202,6 +214,13 @@ pub struct RealSolarHaloLayer {
 pub struct RealSolarHaloLight;
 
 #[derive(Component, Debug, Clone, Copy)]
+pub struct EarthLandmassFeatureVisual {
+    pub index: usize,
+    pub total: usize,
+    pub radius: f32,
+}
+
+#[derive(Component, Debug, Clone, Copy)]
 pub struct EarthAtmosphereLayer {
     pub layer: usize,
 }
@@ -217,6 +236,9 @@ pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_earth_surface_landmasses)
+            .add_systems(Update, update_earth_surface_landmasses);
+
         app.add_systems(Startup, spawn_earth_atmosphere_and_clouds)
             .add_systems(
                 Update,
@@ -1332,6 +1354,122 @@ fn earth_cloud_feature_scale(index: usize, earth_visual_radius: f32) -> f32 {
     base * earth_visual_radius.clamp(0.55, 1.25).sqrt()
 }
 
+fn spawn_earth_surface_landmasses(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let earth_radius = earth_catalog_visual_radius();
+
+    let vegetation_material = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.16, 0.50, 0.24, 0.88),
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        ..default()
+    });
+
+    let arid_material = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.62, 0.46, 0.23, 0.82),
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        ..default()
+    });
+
+    let land_mesh = meshes.add(Sphere::new(1.0).mesh().uv(12, 6));
+
+    for index in 0..EARTH_LANDMASS_SAMPLE_COUNT {
+        let direction = earth_landmass_direction(index, EARTH_LANDMASS_SAMPLE_COUNT, 0.0);
+        let strength = earth_landmass_cluster_strength(direction);
+
+        if strength <= 0.0 {
+            continue;
+        }
+
+        let scale = earth_landmass_feature_scale(index, earth_radius, strength);
+        let biome_noise = deterministic_noise(index, 83.771);
+        let material = if biome_noise > 0.64 {
+            arid_material.clone()
+        } else {
+            vegetation_material.clone()
+        };
+
+        commands.spawn((
+            Mesh3d(land_mesh.clone()),
+            MeshMaterial3d(material),
+            Transform::from_scale(Vec3::splat(scale)),
+            EarthLandmassFeatureVisual {
+                index,
+                total: EARTH_LANDMASS_SAMPLE_COUNT,
+                radius: earth_radius * EARTH_LANDMASS_RADIUS_FACTOR,
+            },
+            Name::new(format!("Earth Landmass Feature {}", index)),
+        ));
+    }
+}
+
+fn update_earth_surface_landmasses(
+    simulation_clock: Res<SimulationClock>,
+    mut query: Query<(&EarthLandmassFeatureVisual, &mut Transform)>,
+) {
+    let days_since_j2000 = simulation_clock.0.days_since_j2000();
+
+    let Some(earth_position) = body_visual_position(BodyId::Earth, days_since_j2000) else {
+        return;
+    };
+
+    let phase = days_since_j2000 as f32 * EARTH_LANDMASS_ROTATION_SPEED;
+
+    for (landmass, mut transform) in query.iter_mut() {
+        let direction = earth_landmass_direction(landmass.index, landmass.total, phase);
+        transform.translation = earth_position + direction * landmass.radius;
+    }
+}
+
+fn earth_landmass_direction(index: usize, total: usize, phase: f32) -> Vec3 {
+    spherical_fibonacci_direction(index, total, phase + 0.618)
+}
+
+fn earth_landmass_cluster_strength(direction: Vec3) -> f32 {
+    let mut strongest = 0.0_f32;
+
+    for cluster_index in 0..EARTH_LANDMASS_CLUSTER_COUNT {
+        let seed = EARTH_LANDMASS_CLUSTER_SEEDS[cluster_index];
+        let threshold = EARTH_LANDMASS_CLUSTER_THRESHOLDS[cluster_index];
+        let center = spherical_fibonacci_direction(
+            seed,
+            EARTH_LANDMASS_SAMPLE_COUNT,
+            0.271 + cluster_index as f32 * 0.173,
+        );
+
+        let dot = direction.dot(center);
+
+        if dot > threshold {
+            let strength = ((dot - threshold) / (1.0 - threshold)).clamp(0.0, 1.0);
+            strongest = strongest.max(strength);
+        }
+    }
+
+    strongest
+}
+
+fn earth_landmass_feature_scale(index: usize, earth_visual_radius: f32, strength: f32) -> f32 {
+    let noise = deterministic_noise(index, 121.818);
+    let base =
+        EARTH_LANDMASS_MIN_SCALE + (EARTH_LANDMASS_MAX_SCALE - EARTH_LANDMASS_MIN_SCALE) * noise;
+
+    base * (0.45 + strength * 0.75) * earth_visual_radius.clamp(0.55, 1.35).sqrt()
+}
+
+#[cfg(test)]
+fn earth_landmass_visible_sample_count() -> usize {
+    (0..EARTH_LANDMASS_SAMPLE_COUNT)
+        .filter(|index| {
+            let direction = earth_landmass_direction(*index, EARTH_LANDMASS_SAMPLE_COUNT, 0.0);
+            earth_landmass_cluster_strength(direction) > 0.0
+        })
+        .count()
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -1717,5 +1855,60 @@ mod earth_atmosphere_cloud_tests {
         let scale = earth_cloud_feature_scale(12, 0.65);
 
         assert!(scale > 0.0);
+    }
+}
+
+#[cfg(test)]
+mod earth_landmass_tests {
+    use super::*;
+
+    #[test]
+    fn earth_landmass_cluster_arrays_match_count() {
+        assert_eq!(
+            EARTH_LANDMASS_CLUSTER_SEEDS.len(),
+            EARTH_LANDMASS_CLUSTER_COUNT
+        );
+        assert_eq!(
+            EARTH_LANDMASS_CLUSTER_THRESHOLDS.len(),
+            EARTH_LANDMASS_CLUSTER_COUNT
+        );
+    }
+
+    #[test]
+    fn earth_landmass_constants_are_valid() {
+        assert!(EARTH_LANDMASS_SAMPLE_COUNT >= 256);
+        assert!(EARTH_LANDMASS_RADIUS_FACTOR > 1.0);
+        assert!(EARTH_LANDMASS_MIN_SCALE > 0.0);
+        assert!(EARTH_LANDMASS_MAX_SCALE > EARTH_LANDMASS_MIN_SCALE);
+    }
+
+    #[test]
+    fn earth_landmass_direction_is_normalized() {
+        let direction = earth_landmass_direction(12, 128, 0.25);
+
+        assert!((direction.length() - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn earth_landmass_cluster_strength_stays_in_range() {
+        let direction = earth_landmass_direction(32, EARTH_LANDMASS_SAMPLE_COUNT, 0.0);
+        let strength = earth_landmass_cluster_strength(direction);
+
+        assert!((0.0..=1.0).contains(&strength));
+    }
+
+    #[test]
+    fn earth_landmass_feature_scale_stays_positive() {
+        let scale = earth_landmass_feature_scale(18, 0.65, 0.6);
+
+        assert!(scale > 0.0);
+    }
+
+    #[test]
+    fn earth_landmass_visible_sample_count_is_reasonable() {
+        let count = earth_landmass_visible_sample_count();
+
+        assert!(count >= 32);
+        assert!(count < EARTH_LANDMASS_SAMPLE_COUNT);
     }
 }
