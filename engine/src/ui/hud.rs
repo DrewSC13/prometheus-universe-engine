@@ -48,7 +48,7 @@ fn update_simulation_hud(
     for mut text in query.iter_mut() {
         text.0 = format!(
             "Prometheus Universe Engine\n\
-             Fase 0: Sol-Tierra-Luna\n\
+             Fase 1: Sistema Solar catalogado\n\
              JD TDB: {:.5}\n\
              Dias desde J2000: {:.2}\n\
              Escala temporal: x{:.0}\n\
