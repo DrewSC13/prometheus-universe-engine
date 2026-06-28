@@ -32,10 +32,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Camera3d {
-            hdr: true,
-            ..default()
-        },
+        Camera3d::default(),
         Tonemapping::TonyMcMapface,
         Bloom::NATURAL,
         FreeCamera,
