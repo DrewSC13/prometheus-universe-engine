@@ -10,6 +10,10 @@ use crate::time::{format_time_scale, SimulationClock, TimeDirection};
 #[derive(Component, Debug)]
 pub struct SimulationHudText;
 
+const HUD_PANEL_ALPHA_FULL: f32 = 0.72;
+const HUD_PANEL_ALPHA_COMPACT: f32 = 0.56;
+const HUD_PANEL_ALPHA_HIDDEN: f32 = 0.0;
+
 #[derive(Resource, Debug, Clone, Copy)]
 pub struct HudVisibility {
     pub visible: bool,
@@ -43,14 +47,35 @@ fn spawn_simulation_hud(mut commands: Commands) {
             ..default()
         },
         TextColor(Color::WHITE),
+        BackgroundColor(hud_panel_background_color(true, false).0),
         Node {
             position_type: PositionType::Absolute,
             left: Val::Px(12.0),
             top: Val::Px(12.0),
+            padding: UiRect::all(Val::Px(10.0)),
             ..default()
         },
         SimulationHudText,
     ));
+}
+
+fn hud_panel_background_color(visible: bool, compact: bool) -> BackgroundColor {
+    BackgroundColor(Color::srgba(
+        0.0,
+        0.0,
+        0.0,
+        hud_panel_alpha(visible, compact),
+    ))
+}
+
+fn hud_panel_alpha(visible: bool, compact: bool) -> f32 {
+    if !visible {
+        HUD_PANEL_ALPHA_HIDDEN
+    } else if compact {
+        HUD_PANEL_ALPHA_COMPACT
+    } else {
+        HUD_PANEL_ALPHA_FULL
+    }
 }
 
 fn toggle_hud_visibility(
@@ -74,7 +99,7 @@ fn update_simulation_hud(
     orbit_visibility_mode: Option<Res<OrbitVisibilityMode>>,
     selected_body: Option<Res<SelectedBody>>,
     hud_visibility: Res<HudVisibility>,
-    mut query: Query<&mut Text, With<SimulationHudText>>,
+    mut query: Query<(&mut Text, &mut BackgroundColor), With<SimulationHudText>>,
 ) {
     let simulation_time = simulation_clock.0;
 
@@ -103,13 +128,15 @@ fn update_simulation_hud(
     let selected_body_label = selected_body_compact_label(selected_body);
     let selected_body_summary = selected_body_hud_summary(selected_body);
 
-    for mut text in query.iter_mut() {
+    for (mut text, mut background) in query.iter_mut() {
         if !hud_visibility.visible {
             text.0.clear();
+            *background = hud_panel_background_color(false, hud_visibility.compact);
             continue;
         }
 
         if hud_visibility.compact {
+            *background = hud_panel_background_color(true, true);
             text.0 = format!(
                 "Prometheus | Fase 2 | JD {:.2} | vel {} | {} | pausa: {} | seleccion: {} | click seleccionar | G enfocar | H/M HUD",
                 simulation_time.jd_tdb,
@@ -120,6 +147,8 @@ fn update_simulation_hud(
             );
             continue;
         }
+
+        *background = hud_panel_background_color(true, false);
 
         let time_scale_label = format_time_scale(simulation_time.time_scale);
 
@@ -163,5 +192,25 @@ fn update_simulation_hud(
             direction,
             paused,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hud_panel_alpha_uses_full_opacity_for_expanded_mode() {
+        assert_eq!(hud_panel_alpha(true, false), HUD_PANEL_ALPHA_FULL);
+    }
+
+    #[test]
+    fn hud_panel_alpha_uses_lighter_opacity_for_compact_mode() {
+        assert_eq!(hud_panel_alpha(true, true), HUD_PANEL_ALPHA_COMPACT);
+    }
+
+    #[test]
+    fn hud_panel_alpha_is_transparent_when_hidden() {
+        assert_eq!(hud_panel_alpha(false, false), HUD_PANEL_ALPHA_HIDDEN);
     }
 }
