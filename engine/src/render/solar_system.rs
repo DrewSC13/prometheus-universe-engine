@@ -19,7 +19,9 @@ const REAL_SOLAR_HALO_RADIUS_FACTORS: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
 const REAL_SOLAR_HALO_ALPHA_VALUES: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
     [0.110, 0.074, 0.050, 0.032, 0.020, 0.012, 0.007];
 const REAL_SOLAR_LIGHT_INTENSITY: f32 = 90_000.0;
-const REAL_SOLAR_LIGHT_RANGE: f32 = 420.0;\n\nconst PLANET_SURFACE_FEATURE_COUNT: usize = 96;
+const REAL_SOLAR_LIGHT_RANGE: f32 = 420.0;
+
+const PLANET_SURFACE_FEATURE_COUNT: usize = 96;
 const PLANET_SURFACE_RADIUS_FACTOR: f32 = 1.012;
 const PLANET_SURFACE_MIN_SCALE: f32 = 0.010;
 const PLANET_SURFACE_MAX_SCALE: f32 = 0.034;
@@ -187,7 +189,9 @@ pub struct RealSolarHaloLayer {
 }
 
 #[derive(Component, Debug)]
-pub struct RealSolarHaloLight;\n\npub struct SolarSystemRenderPlugin;
+pub struct RealSolarHaloLight;
+
+pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
@@ -196,7 +200,8 @@ impl Plugin for SolarSystemRenderPlugin {
             brightness: SPACE_AMBIENT_BRIGHTNESS,
             ..default()
         });
-        app.add_systems(Startup, spawn_planet_surface_detail_layer)\n            .add_systems(Startup, spawn_real_solar_halo_glow)
+        app.add_systems(Startup, spawn_planet_surface_detail_layer)
+            .add_systems(Startup, spawn_real_solar_halo_glow)
             .add_systems(
                 Update,
                 (update_planet_surface_features, update_planet_band_markers),
@@ -1439,7 +1444,9 @@ mod tests {
 
         assert!(label_vertical_offset(sun) > label_vertical_offset(moon));
     }
-}\n\nfn spawn_real_solar_halo_glow(
+}
+
+fn spawn_real_solar_halo_glow(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -1485,14 +1492,22 @@ fn solar_catalog_visual_radius() -> f32 {
         .find(|body| body.id == BodyId::Sun)
         .map(|body| body.visual_radius)
         .unwrap_or(4.0)
-}\n\n\n#[cfg(test)]
+}
+
+#[cfg(test)]
 mod real_solar_halo_glow_tests {
     use super::*;
 
     #[test]
     fn real_solar_halo_layer_arrays_match_layer_count() {
-        assert_eq!(REAL_SOLAR_HALO_RADIUS_FACTORS.len(), REAL_SOLAR_HALO_LAYER_COUNT);
-        assert_eq!(REAL_SOLAR_HALO_ALPHA_VALUES.len(), REAL_SOLAR_HALO_LAYER_COUNT);
+        assert_eq!(
+            REAL_SOLAR_HALO_RADIUS_FACTORS.len(),
+            REAL_SOLAR_HALO_LAYER_COUNT
+        );
+        assert_eq!(
+            REAL_SOLAR_HALO_ALPHA_VALUES.len(),
+            REAL_SOLAR_HALO_LAYER_COUNT
+        );
     }
 
     #[test]
@@ -1514,4 +1529,4 @@ mod real_solar_halo_glow_tests {
         assert!(REAL_SOLAR_LIGHT_INTENSITY > 0.0);
         assert!(REAL_SOLAR_LIGHT_RANGE > 0.0);
     }
-}\n
+}
