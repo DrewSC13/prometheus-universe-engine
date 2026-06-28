@@ -7,12 +7,28 @@ use crate::time::{SimulationClock, TimeDirection};
 #[derive(Component, Debug)]
 pub struct SimulationHudText;
 
+#[derive(Resource, Debug, Clone, Copy)]
+pub struct HudVisibility {
+    pub visible: bool,
+    pub compact: bool,
+}
+
+impl Default for HudVisibility {
+    fn default() -> Self {
+        Self {
+            visible: true,
+            compact: false,
+        }
+    }
+}
+
 pub struct SimulationHudPlugin;
 
 impl Plugin for SimulationHudPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_simulation_hud)
-            .add_systems(Update, update_simulation_hud);
+        app.insert_resource(HudVisibility::default())
+            .add_systems(Startup, spawn_simulation_hud)
+            .add_systems(Update, (update_simulation_hud, toggle_hud_visibility));
     }
 }
 
@@ -32,6 +48,21 @@ fn spawn_simulation_hud(mut commands: Commands) {
         },
         SimulationHudText,
     ));
+}
+
+fn toggle_hud_visibility(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut hud_visibility: ResMut<HudVisibility>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyH) {
+        hud_visibility.visible = !hud_visibility.visible;
+        info!("HUD visible: {}", hud_visibility.visible);
+    }
+
+    if keyboard.just_pressed(KeyCode::KeyM) {
+        hud_visibility.compact = !hud_visibility.compact;
+        info!("HUD compact mode: {}", hud_visibility.compact);
+    }
 }
 
 fn update_simulation_hud(
@@ -64,6 +95,22 @@ fn update_simulation_hud(
         .unwrap_or("unknown");
 
     for mut text in query.iter_mut() {
+        if !hud_visibility.visible {
+            text.0.clear();
+            continue;
+        }
+
+        if hud_visibility.compact {
+            text.0 = format!(
+                "Prometheus Universe Engine | Fase 1 | JD {:.2} | x{:.0} | {} | pausa: {} | H HUD | M modo",
+                simulation_time.jd_tdb,
+                simulation_time.time_scale,
+                direction,
+                paused,
+            );
+            continue;
+        }
+
         text.0 = format!(
             "Prometheus Universe Engine\n\
              Fase 1: Sistema Solar catalogado\n\
@@ -91,7 +138,9 @@ fn update_simulation_hud(
              O = orbitas\n\
              C = vista general\n\
              V = vista lejana\n\
-             F = sistema interior",
+             F = sistema interior\n\
+             H = mostrar/ocultar HUD\n\
+             M = HUD compacto",
             total_bodies,
             root_body_count,
             orbiting_body_count,
