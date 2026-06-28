@@ -1,4 +1,4 @@
-use bevy::prelude::Resource;
+use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Epoch {
@@ -22,6 +22,14 @@ pub struct SimulationTime {
 
 #[derive(Resource, Debug, Clone, Copy)]
 pub struct SimulationClock(pub SimulationTime);
+
+pub struct SimulationTimeControlsPlugin;
+
+impl Plugin for SimulationTimeControlsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, keyboard_time_controls);
+    }
+}
 
 impl Default for SimulationClock {
     fn default() -> Self {
@@ -55,6 +63,10 @@ impl SimulationTime {
         self.paused = false;
     }
 
+    pub fn toggle_pause(&mut self) {
+        self.paused = !self.paused;
+    }
+
     pub fn set_time_scale(&mut self, scale: f64) {
         assert!(scale >= 0.0, "time_scale no puede ser negativo");
         self.time_scale = scale;
@@ -62,6 +74,13 @@ impl SimulationTime {
 
     pub fn set_direction(&mut self, direction: TimeDirection) {
         self.direction = direction;
+    }
+
+    pub fn toggle_direction(&mut self) {
+        self.direction = match self.direction {
+            TimeDirection::Forward => TimeDirection::Backward,
+            TimeDirection::Backward => TimeDirection::Forward,
+        };
     }
 
     pub fn tick_seconds(&mut self, real_delta_seconds: f64) {
@@ -76,6 +95,60 @@ impl SimulationTime {
 
         let simulation_seconds = real_delta_seconds * self.time_scale * sign;
         self.jd_tdb += simulation_seconds / Self::SECONDS_PER_DAY;
+    }
+}
+
+fn keyboard_time_controls(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut simulation_clock: ResMut<SimulationClock>,
+) {
+    if keyboard.just_pressed(KeyCode::Space) {
+        simulation_clock.0.toggle_pause();
+        info!("SimulationTime paused: {}", simulation_clock.0.paused);
+    }
+
+    if keyboard.just_pressed(KeyCode::Digit1) {
+        simulation_clock.0.set_time_scale(1.0);
+        info!("SimulationTime scale: x1");
+    }
+
+    if keyboard.just_pressed(KeyCode::Digit2) {
+        simulation_clock.0.set_time_scale(100.0);
+        info!("SimulationTime scale: x100");
+    }
+
+    if keyboard.just_pressed(KeyCode::Digit3) {
+        simulation_clock.0.set_time_scale(1_000.0);
+        info!("SimulationTime scale: x1000");
+    }
+
+    if keyboard.just_pressed(KeyCode::Digit4) {
+        simulation_clock.0.set_time_scale(10_000.0);
+        info!("SimulationTime scale: x10000");
+    }
+
+    if keyboard.just_pressed(KeyCode::Digit5) {
+        simulation_clock.0.set_time_scale(50_000.0);
+        info!("SimulationTime scale: x50000");
+    }
+
+    if keyboard.just_pressed(KeyCode::Digit6) {
+        simulation_clock.0.set_time_scale(1_000_000.0);
+        info!("SimulationTime scale: x1000000");
+    }
+
+    if keyboard.just_pressed(KeyCode::KeyB) {
+        simulation_clock.0.toggle_direction();
+        info!(
+            "SimulationTime direction: {:?}",
+            simulation_clock.0.direction
+        );
+    }
+
+    if keyboard.just_pressed(KeyCode::KeyR) {
+        simulation_clock.0 = SimulationTime::j2000();
+        simulation_clock.0.set_time_scale(50_000.0);
+        info!("SimulationTime reset to J2000 with x50000 scale");
     }
 }
 
@@ -122,5 +195,29 @@ mod tests {
         time.pause();
         time.tick_seconds(SimulationTime::SECONDS_PER_DAY);
         assert_eq!(time.jd_tdb, SimulationTime::J2000_JD_TDB);
+    }
+
+    #[test]
+    fn toggle_pause_changes_pause_state() {
+        let mut time = SimulationTime::j2000();
+        assert!(!time.paused);
+
+        time.toggle_pause();
+        assert!(time.paused);
+
+        time.toggle_pause();
+        assert!(!time.paused);
+    }
+
+    #[test]
+    fn toggle_direction_changes_direction() {
+        let mut time = SimulationTime::j2000();
+        assert_eq!(time.direction, TimeDirection::Forward);
+
+        time.toggle_direction();
+        assert_eq!(time.direction, TimeDirection::Backward);
+
+        time.toggle_direction();
+        assert_eq!(time.direction, TimeDirection::Forward);
     }
 }

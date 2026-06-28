@@ -1,34 +1,66 @@
 # Roadmap
 
-## Fase 0: Prototipos críticos
+## Fase 0: Demo Sol-Tierra-Luna
 
-- Crear repositorio.
-- Crear estructura base.
-- Crear escena Bevy base.
-- Implementar cámara libre.
-- Implementar SimulationTime.
-- Implementar coordenadas globales/locales.
-- Implementar Floating Origin.
-- Probar distancia Tierra-Luna.
-- Renderizar 100.000 puntos.
-- Probar mmap.
-- Probar carga asíncrona.
+Estado: completado funcionalmente.
 
-## Fase 1: MVP Sol-Tierra-Luna
+### Implementado
 
-- Sol.
-- Tierra.
-- Luna.
-- Órbitas analíticas.
-- Rotación básica.
-- Control de tiempo.
-- UI mínima.
-- Floating Origin estable.
+- Repositorio Git/GitHub.
+- Commits firmados.
+- Workspace Rust.
+- Bevy inicial.
+- Cámara libre.
+- SimulationTime.
+- Controles de tiempo.
+- Coordenadas globales/locales.
+- Floating Origin runtime.
+- Simulación analítica Sol-Tierra-Luna.
+- Render educativo Sol-Tierra-Luna.
+- Órbitas visuales.
+- Etiquetas básicas.
+- HUD runtime.
+- 19 tests pasando.
 
-## Fase 2: Sistema Solar básico
+## Fase 1: Sistema Solar básico
 
-- 8 planetas.
-- Órbitas keplerianas.
-- Texturas básicas.
-- Etiquetas.
-- Panel de información.
+Objetivo: expandir la demo hacia un Sistema Solar educativo.
+
+### Pendiente
+
+- Mercurio.
+- Venus.
+- Marte.
+- Júpiter.
+- Saturno.
+- Urano.
+- Neptuno.
+- Estructura genérica de cuerpos celestes.
+- Configuración de cuerpos por datos.
+- Mejoras de UI.
+- Mejoras de cámara.
+- Mejoras visuales de órbitas.
+
+## Fase 2: Datos científicos
+
+Objetivo: comenzar integración con fuentes reales.
+
+### Pendiente
+
+- Pipeline Python.
+- Efemérides.
+- Conversión de datos.
+- Validación.
+- Binarios runtime.
+
+## Fase 3: Escala galáctica inicial
+
+Objetivo: prototipos de estrellas masivas y GPU buffers.
+
+### Pendiente
+
+- Starfield.
+- Buffers GPU.
+- Culling.
+- Streaming.
+- Benchmarks.
