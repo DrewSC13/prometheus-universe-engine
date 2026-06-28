@@ -21,6 +21,16 @@ const REAL_SOLAR_HALO_ALPHA_VALUES: [f32; REAL_SOLAR_HALO_LAYER_COUNT] =
 const REAL_SOLAR_LIGHT_INTENSITY: f32 = 90_000.0;
 const REAL_SOLAR_LIGHT_RANGE: f32 = 420.0;
 
+const EARTH_ATMOSPHERE_LAYER_COUNT: usize = 3;
+const EARTH_ATMOSPHERE_RADIUS_FACTORS: [f32; EARTH_ATMOSPHERE_LAYER_COUNT] = [1.045, 1.075, 1.115];
+const EARTH_ATMOSPHERE_ALPHA_VALUES: [f32; EARTH_ATMOSPHERE_LAYER_COUNT] = [0.115, 0.060, 0.026];
+
+const EARTH_CLOUD_FEATURE_COUNT: usize = 144;
+const EARTH_CLOUD_RADIUS_FACTOR: f32 = 1.026;
+const EARTH_CLOUD_MIN_SCALE: f32 = 0.010;
+const EARTH_CLOUD_MAX_SCALE: f32 = 0.030;
+const EARTH_CLOUD_ROTATION_SPEED: f32 = 0.052;
+
 const PLANET_SURFACE_FEATURE_COUNT: usize = 96;
 const PLANET_SURFACE_RADIUS_FACTOR: f32 = 1.012;
 const PLANET_SURFACE_MIN_SCALE: f32 = 0.010;
@@ -191,10 +201,28 @@ pub struct RealSolarHaloLayer {
 #[derive(Component, Debug)]
 pub struct RealSolarHaloLight;
 
+#[derive(Component, Debug, Clone, Copy)]
+pub struct EarthAtmosphereLayer {
+    pub layer: usize,
+}
+
+#[derive(Component, Debug, Clone, Copy)]
+pub struct EarthCloudFeatureVisual {
+    pub index: usize,
+    pub total: usize,
+    pub radius: f32,
+}
+
 pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_earth_atmosphere_and_clouds)
+            .add_systems(
+                Update,
+                (update_earth_atmosphere_layers, update_earth_cloud_features),
+            );
+
         app.insert_resource(AmbientLight {
             color: Color::srgb(0.04, 0.045, 0.055),
             brightness: SPACE_AMBIENT_BRIGHTNESS,
@@ -1197,6 +1225,113 @@ fn planet_band_y_factors(id: BodyId) -> Option<&'static [f32]> {
     }
 }
 
+fn spawn_earth_atmosphere_and_clouds(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let earth_radius = earth_catalog_visual_radius();
+
+    for layer in 0..EARTH_ATMOSPHERE_LAYER_COUNT {
+        let radius = earth_radius * EARTH_ATMOSPHERE_RADIUS_FACTORS[layer];
+        let alpha = EARTH_ATMOSPHERE_ALPHA_VALUES[layer];
+
+        let mesh = meshes.add(Sphere::new(radius).mesh().uv(48, 24));
+        let material = materials.add(StandardMaterial {
+            base_color: Color::srgba(0.22, 0.58, 1.0, alpha),
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            ..default()
+        });
+
+        commands.spawn((
+            Mesh3d(mesh),
+            MeshMaterial3d(material),
+            Transform::from_translation(Vec3::ZERO),
+            EarthAtmosphereLayer { layer },
+            Name::new(format!("Earth Atmosphere Layer {}", layer)),
+        ));
+    }
+
+    let cloud_mesh = meshes.add(Sphere::new(1.0).mesh().uv(16, 8));
+    let cloud_material = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.96, 0.98, 1.0, 0.78),
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        ..default()
+    });
+
+    for index in 0..EARTH_CLOUD_FEATURE_COUNT {
+        let scale = earth_cloud_feature_scale(index, earth_radius);
+
+        commands.spawn((
+            Mesh3d(cloud_mesh.clone()),
+            MeshMaterial3d(cloud_material.clone()),
+            Transform::from_scale(Vec3::splat(scale)),
+            EarthCloudFeatureVisual {
+                index,
+                total: EARTH_CLOUD_FEATURE_COUNT,
+                radius: earth_radius * EARTH_CLOUD_RADIUS_FACTOR,
+            },
+            Name::new(format!("Earth Cloud Feature {}", index)),
+        ));
+    }
+}
+
+fn update_earth_atmosphere_layers(
+    simulation_clock: Res<SimulationClock>,
+    mut query: Query<(&EarthAtmosphereLayer, &mut Transform)>,
+) {
+    let days_since_j2000 = simulation_clock.0.days_since_j2000();
+
+    let Some(earth_position) = body_visual_position(BodyId::Earth, days_since_j2000) else {
+        return;
+    };
+
+    for (layer, mut transform) in query.iter_mut() {
+        let pulse = (days_since_j2000 as f32 * 0.018 + layer.layer as f32).sin() * 0.006;
+        transform.translation = earth_position;
+        transform.scale = Vec3::splat(1.0 + pulse);
+    }
+}
+
+fn update_earth_cloud_features(
+    simulation_clock: Res<SimulationClock>,
+    mut query: Query<(&EarthCloudFeatureVisual, &mut Transform)>,
+) {
+    let days_since_j2000 = simulation_clock.0.days_since_j2000();
+
+    let Some(earth_position) = body_visual_position(BodyId::Earth, days_since_j2000) else {
+        return;
+    };
+
+    let phase = days_since_j2000 as f32 * EARTH_CLOUD_ROTATION_SPEED;
+
+    for (cloud, mut transform) in query.iter_mut() {
+        let direction = earth_cloud_direction(cloud.index, cloud.total, phase);
+        transform.translation = earth_position + direction * cloud.radius;
+    }
+}
+
+fn earth_catalog_visual_radius() -> f32 {
+    SOLAR_SYSTEM_BODIES
+        .iter()
+        .find(|body| body.id == BodyId::Earth)
+        .map(|body| body.visual_radius)
+        .unwrap_or(0.65)
+}
+
+fn earth_cloud_direction(index: usize, total: usize, phase: f32) -> Vec3 {
+    spherical_fibonacci_direction(index, total, phase + 1.337)
+}
+
+fn earth_cloud_feature_scale(index: usize, earth_visual_radius: f32) -> f32 {
+    let noise = deterministic_noise(index, 42.4242);
+    let base = EARTH_CLOUD_MIN_SCALE + (EARTH_CLOUD_MAX_SCALE - EARTH_CLOUD_MIN_SCALE) * noise;
+
+    base * earth_visual_radius.clamp(0.55, 1.25).sqrt()
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -1529,5 +1664,58 @@ mod real_solar_halo_glow_tests {
     fn real_solar_light_constants_are_valid() {
         assert!(REAL_SOLAR_LIGHT_INTENSITY > 0.0);
         assert!(REAL_SOLAR_LIGHT_RANGE > 0.0);
+    }
+}
+
+#[cfg(test)]
+mod earth_atmosphere_cloud_tests {
+    use super::*;
+
+    #[test]
+    fn earth_atmosphere_arrays_match_layer_count() {
+        assert_eq!(
+            EARTH_ATMOSPHERE_RADIUS_FACTORS.len(),
+            EARTH_ATMOSPHERE_LAYER_COUNT
+        );
+        assert_eq!(
+            EARTH_ATMOSPHERE_ALPHA_VALUES.len(),
+            EARTH_ATMOSPHERE_LAYER_COUNT
+        );
+    }
+
+    #[test]
+    fn earth_atmosphere_radius_expands_outward() {
+        for pair in EARTH_ATMOSPHERE_RADIUS_FACTORS.windows(2) {
+            assert!(pair[0] < pair[1]);
+        }
+    }
+
+    #[test]
+    fn earth_atmosphere_alpha_fades_outward() {
+        for pair in EARTH_ATMOSPHERE_ALPHA_VALUES.windows(2) {
+            assert!(pair[0] > pair[1]);
+        }
+    }
+
+    #[test]
+    fn earth_cloud_constants_are_valid() {
+        assert!(EARTH_CLOUD_FEATURE_COUNT >= 96);
+        assert!(EARTH_CLOUD_RADIUS_FACTOR > 1.0);
+        assert!(EARTH_CLOUD_MIN_SCALE > 0.0);
+        assert!(EARTH_CLOUD_MAX_SCALE > EARTH_CLOUD_MIN_SCALE);
+    }
+
+    #[test]
+    fn earth_cloud_direction_is_normalized() {
+        let direction = earth_cloud_direction(8, 64, 0.4);
+
+        assert!((direction.length() - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn earth_cloud_feature_scale_stays_positive() {
+        let scale = earth_cloud_feature_scale(12, 0.65);
+
+        assert!(scale > 0.0);
     }
 }
