@@ -2,11 +2,16 @@ use bevy::math::primitives::Sphere;
 use bevy::prelude::*;
 
 use crate::coordinates::{GlobalPosition, GlobalPositionComponent};
+use crate::interaction::selection::SelectedBody;
 use crate::simulation::bodies::{BodyClass, BodyId, CelestialBodyDefinition, SOLAR_SYSTEM_BODIES};
-use crate::simulation::catalog::{body_position_meters, solar_system_runtime_state};
+use crate::simulation::catalog::{
+    body_definition, body_position_meters, solar_system_runtime_state,
+};
 use crate::time::SimulationClock;
 
 const SPACE_AMBIENT_BRIGHTNESS: f32 = 0.018;
+const SELECTED_BODY_INDICATOR_RADIUS_FACTOR: f32 = 1.28;
+const SELECTED_BODY_INDICATOR_MIN_PADDING: f32 = 0.38;
 
 mod earth;
 mod labels;
@@ -66,6 +71,9 @@ pub struct SolarBodyVisual {
     pub id: BodyId,
 }
 
+#[derive(Component, Debug)]
+pub struct SelectedBodyIndicatorVisual;
+
 pub struct SolarSystemRenderPlugin;
 
 impl Plugin for SolarSystemRenderPlugin {
@@ -105,6 +113,7 @@ impl Plugin for SolarSystemRenderPlugin {
                     update_solar_surface_features,
                     update_solar_corona_markers,
                     update_solar_body_labels,
+                    update_selected_body_indicator,
                     apply_label_visibility,
                     apply_orbit_visibility,
                 ),
@@ -195,7 +204,20 @@ fn spawn_solar_system_visuals(
         }),
     ];
 
+    let selected_body_indicator_material = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.35, 0.85, 1.0, 0.22),
+        emissive: LinearRgba::rgb(0.12, 0.42, 0.75),
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        ..default()
+    });
+
     spawn_starfield(&mut commands, small_sphere.clone(), &starfield_materials);
+    spawn_selected_body_indicator(
+        &mut commands,
+        sphere.clone(),
+        selected_body_indicator_material,
+    );
 
     for body in SOLAR_SYSTEM_BODIES.iter() {
         let material = materials.add(StandardMaterial {
@@ -270,6 +292,64 @@ fn spawn_solar_system_visuals(
         },
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
+}
+
+fn spawn_selected_body_indicator(
+    commands: &mut Commands,
+    mesh: Handle<Mesh>,
+    material: Handle<StandardMaterial>,
+) {
+    commands.spawn((
+        Mesh3d(mesh),
+        MeshMaterial3d(material),
+        Transform::from_scale(Vec3::ZERO),
+        Visibility::Hidden,
+        SelectedBodyIndicatorVisual,
+    ));
+}
+
+fn update_selected_body_indicator(
+    simulation_clock: Res<SimulationClock>,
+    selected_body: Option<Res<SelectedBody>>,
+    mut query: Query<(&mut Transform, &mut Visibility), With<SelectedBodyIndicatorVisual>>,
+) {
+    let days_since_j2000 = simulation_clock.0.days_since_j2000();
+    let selected_body_id = selected_body.as_deref().and_then(|selection| selection.id);
+
+    let Some(body_id) = selected_body_id else {
+        hide_selected_body_indicators(&mut query);
+        return;
+    };
+
+    let Some(body) = body_definition(body_id) else {
+        hide_selected_body_indicators(&mut query);
+        return;
+    };
+
+    let Some(position) = body_visual_position(body_id, days_since_j2000) else {
+        hide_selected_body_indicators(&mut query);
+        return;
+    };
+
+    for (mut transform, mut visibility) in query.iter_mut() {
+        transform.translation = position;
+        transform.scale = Vec3::splat(selected_body_indicator_scale(body.visual_radius));
+        *visibility = Visibility::Visible;
+    }
+}
+
+fn hide_selected_body_indicators(
+    query: &mut Query<(&mut Transform, &mut Visibility), With<SelectedBodyIndicatorVisual>>,
+) {
+    for (mut transform, mut visibility) in query.iter_mut() {
+        transform.scale = Vec3::ZERO;
+        *visibility = Visibility::Hidden;
+    }
+}
+
+fn selected_body_indicator_scale(body_visual_radius: f32) -> f32 {
+    (body_visual_radius * SELECTED_BODY_INDICATOR_RADIUS_FACTOR)
+        .max(body_visual_radius + SELECTED_BODY_INDICATOR_MIN_PADDING)
 }
 
 fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
