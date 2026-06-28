@@ -126,7 +126,8 @@ fn update_simulation_hud(
 
     let selected_body = selected_body.as_deref().copied().unwrap_or_default();
     let selected_body_label = selected_body_compact_label(selected_body);
-    let selected_body_summary = selected_body_hud_summary(selected_body);
+    let selected_body_summary =
+        selected_body_hud_summary(selected_body, simulation_time.days_since_j2000());
 
     for (mut text, mut background) in query.iter_mut() {
         if !hud_visibility.visible {
