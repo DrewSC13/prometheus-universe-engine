@@ -47,6 +47,37 @@ impl LabelVisibilityMode {
     }
 }
 
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OrbitVisibilityMode {
+    All,
+    PlanetaryOnly,
+    None,
+}
+
+impl Default for OrbitVisibilityMode {
+    fn default() -> Self {
+        Self::All
+    }
+}
+
+impl OrbitVisibilityMode {
+    pub fn next(self) -> Self {
+        match self {
+            Self::All => Self::PlanetaryOnly,
+            Self::PlanetaryOnly => Self::None,
+            Self::None => Self::All,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::PlanetaryOnly => "planetary",
+            Self::None => "none",
+        }
+    }
+}
+
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SolarBodyVisual {
     pub id: BodyId,
@@ -69,15 +100,18 @@ pub struct SolarSystemRenderPlugin;
 impl Plugin for SolarSystemRenderPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(LabelVisibilityMode::default())
+            .insert_resource(OrbitVisibilityMode::default())
             .add_systems(Startup, spawn_solar_system_visuals)
             .add_systems(
                 Update,
                 (
                     keyboard_label_controls,
+                    keyboard_orbit_controls,
                     update_solar_system_visuals,
                     update_orbit_markers,
                     update_solar_body_labels,
                     apply_label_visibility,
+                    apply_orbit_visibility,
                 ),
             );
     }
@@ -148,6 +182,7 @@ fn spawn_solar_system_visuals(
                     Mesh3d(orbit_marker_sphere.clone()),
                     MeshMaterial3d(orbit_material.clone()),
                     Transform::from_scale(Vec3::splat(marker_radius)),
+                    Visibility::Visible,
                     OrbitMarkerVisual {
                         body_id: body.id,
                         index,
@@ -176,6 +211,16 @@ fn keyboard_label_controls(
     if keyboard.just_pressed(KeyCode::KeyL) {
         *label_visibility_mode = label_visibility_mode.next();
         info!("Label visibility mode: {}", label_visibility_mode.as_str());
+    }
+}
+
+fn keyboard_orbit_controls(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut orbit_visibility_mode: ResMut<OrbitVisibilityMode>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyO) {
+        *orbit_visibility_mode = orbit_visibility_mode.next();
+        info!("Orbit visibility mode: {}", orbit_visibility_mode.as_str());
     }
 }
 
@@ -336,6 +381,33 @@ fn apply_label_visibility(
     }
 }
 
+fn apply_orbit_visibility(
+    orbit_visibility_mode: Res<OrbitVisibilityMode>,
+    mut query: Query<(&OrbitMarkerVisual, &mut Visibility)>,
+) {
+    for (marker, mut visibility) in query.iter_mut() {
+        let visible = match *orbit_visibility_mode {
+            OrbitVisibilityMode::All => true,
+            OrbitVisibilityMode::PlanetaryOnly => is_planetary_orbit(marker.body_id),
+            OrbitVisibilityMode::None => false,
+        };
+
+        *visibility = if visible {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
+    }
+}
+
+fn is_planetary_orbit(body_id: BodyId) -> bool {
+    SOLAR_SYSTEM_BODIES
+        .iter()
+        .find(|body| body.id == body_id)
+        .and_then(|body| body.orbit)
+        .is_some_and(|orbit| orbit.parent == BodyId::Sun)
+}
+
 fn is_major_body_label(id: BodyId) -> bool {
     matches!(
         id,
@@ -421,6 +493,26 @@ mod tests {
         assert!(is_major_body_label(BodyId::Earth));
         assert!(is_major_body_label(BodyId::Jupiter));
         assert!(!is_major_body_label(BodyId::Moon));
+    }
+
+    #[test]
+    fn orbit_visibility_mode_cycles_in_expected_order() {
+        assert_eq!(
+            OrbitVisibilityMode::All.next(),
+            OrbitVisibilityMode::PlanetaryOnly
+        );
+        assert_eq!(
+            OrbitVisibilityMode::PlanetaryOnly.next(),
+            OrbitVisibilityMode::None
+        );
+        assert_eq!(OrbitVisibilityMode::None.next(), OrbitVisibilityMode::All);
+    }
+
+    #[test]
+    fn planetary_orbits_exclude_moon_orbit() {
+        assert!(is_planetary_orbit(BodyId::Earth));
+        assert!(is_planetary_orbit(BodyId::Jupiter));
+        assert!(!is_planetary_orbit(BodyId::Moon));
     }
 
     #[test]
