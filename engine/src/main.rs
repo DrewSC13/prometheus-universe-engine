@@ -6,6 +6,7 @@ use prometheus_engine::camera::{FreeCamera, FreeCameraPlugin};
 use prometheus_engine::coordinates::GlobalPositionComponent;
 use prometheus_engine::floating_origin::FloatingOriginRuntimePlugin;
 use prometheus_engine::interaction::focus::BodyFocusPlugin;
+use prometheus_engine::interaction::picking::BodyPickingPlugin;
 use prometheus_engine::interaction::selection::BodySelectionPlugin;
 use prometheus_engine::render::solar_system::SolarSystemRenderPlugin;
 use prometheus_engine::time::{SimulationClock, SimulationTime, SimulationTimeControlsPlugin};
@@ -23,6 +24,7 @@ fn main() {
             FloatingOriginRuntimePlugin,
             SimulationTimeControlsPlugin,
             BodySelectionPlugin,
+            BodyPickingPlugin,
             BodyFocusPlugin,
             SolarSystemRenderPlugin,
             SimulationHudPlugin,
@@ -55,7 +57,7 @@ fn setup(mut commands: Commands) {
     info!("Prometheus Universe Engine iniciado.");
     info!("Fase 1+ Visual Polish: Sistema Solar catalogado procedural.");
     info!("Controles: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
-    info!("Interacción: N/P selecciona cuerpos, G enfoca selección, Escape limpia selección.");
+    info!("Interacción: click izquierdo selecciona, N/P cambia, G enfoca, Escape limpia.");
     info!("Render: fondo espacial negro, starfield procedural y polish visual espacial.");
 }
 
