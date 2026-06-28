@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+pub const DEFAULT_TIME_SCALE: f64 = 50_000.0;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Epoch {
     J2000,
@@ -35,6 +37,43 @@ impl Default for SimulationClock {
     fn default() -> Self {
         Self(SimulationTime::j2000())
     }
+}
+
+pub fn time_scale_preset_for_digit(digit: u8) -> Option<f64> {
+    match digit {
+        1 => Some(1_000.0),
+        2 => Some(10_000.0),
+        3 => Some(50_000.0),
+        4 => Some(250_000.0),
+        5 => Some(1_000_000.0),
+        6 => Some(5_000_000.0),
+        7 => Some(25_000_000.0),
+        8 => Some(100_000_000.0),
+        9 => Some(500_000_000.0),
+        0 => Some(1_000_000_000.0),
+        _ => None,
+    }
+}
+
+pub fn format_time_scale(scale: f64) -> String {
+    format!("{}x", format_integer_with_separators(scale.round() as i64))
+}
+
+fn format_integer_with_separators(value: i64) -> String {
+    let sign = if value < 0 { "-" } else { "" };
+    let digits = value.abs().to_string();
+    let mut formatted = String::new();
+
+    for (index, character) in digits.chars().rev().enumerate() {
+        if index > 0 && index % 3 == 0 {
+            formatted.push('.');
+        }
+
+        formatted.push(character);
+    }
+
+    let grouped = formatted.chars().rev().collect::<String>();
+    format!("{sign}{grouped}")
 }
 
 impl SimulationTime {
@@ -107,34 +146,24 @@ fn keyboard_time_controls(
         info!("SimulationTime paused: {}", simulation_clock.0.paused);
     }
 
-    if keyboard.just_pressed(KeyCode::Digit1) {
-        simulation_clock.0.set_time_scale(1.0);
-        info!("SimulationTime scale: x1");
-    }
-
-    if keyboard.just_pressed(KeyCode::Digit2) {
-        simulation_clock.0.set_time_scale(100.0);
-        info!("SimulationTime scale: x100");
-    }
-
-    if keyboard.just_pressed(KeyCode::Digit3) {
-        simulation_clock.0.set_time_scale(1_000.0);
-        info!("SimulationTime scale: x1000");
-    }
-
-    if keyboard.just_pressed(KeyCode::Digit4) {
-        simulation_clock.0.set_time_scale(10_000.0);
-        info!("SimulationTime scale: x10000");
-    }
-
-    if keyboard.just_pressed(KeyCode::Digit5) {
-        simulation_clock.0.set_time_scale(50_000.0);
-        info!("SimulationTime scale: x50000");
-    }
-
-    if keyboard.just_pressed(KeyCode::Digit6) {
-        simulation_clock.0.set_time_scale(1_000_000.0);
-        info!("SimulationTime scale: x1000000");
+    for (key, digit) in [
+        (KeyCode::Digit1, 1),
+        (KeyCode::Digit2, 2),
+        (KeyCode::Digit3, 3),
+        (KeyCode::Digit4, 4),
+        (KeyCode::Digit5, 5),
+        (KeyCode::Digit6, 6),
+        (KeyCode::Digit7, 7),
+        (KeyCode::Digit8, 8),
+        (KeyCode::Digit9, 9),
+        (KeyCode::Digit0, 0),
+    ] {
+        if keyboard.just_pressed(key) {
+            if let Some(scale) = time_scale_preset_for_digit(digit) {
+                simulation_clock.0.set_time_scale(scale);
+                info!("Time scale: {}", format_time_scale(scale));
+            }
+        }
     }
 
     if keyboard.just_pressed(KeyCode::KeyB) {
@@ -147,7 +176,7 @@ fn keyboard_time_controls(
 
     if keyboard.just_pressed(KeyCode::KeyR) {
         simulation_clock.0 = SimulationTime::j2000();
-        simulation_clock.0.set_time_scale(50_000.0);
+        simulation_clock.0.set_time_scale(DEFAULT_TIME_SCALE);
         info!("SimulationTime reset to J2000 with x50000 scale");
     }
 }
@@ -219,5 +248,18 @@ mod tests {
 
         time.toggle_direction();
         assert_eq!(time.direction, TimeDirection::Forward);
+    }
+    #[test]
+    fn time_scale_presets_are_spaced_for_visible_orbital_motion() {
+        assert_eq!(time_scale_preset_for_digit(1), Some(1_000.0));
+        assert_eq!(time_scale_preset_for_digit(3), Some(DEFAULT_TIME_SCALE));
+        assert_eq!(time_scale_preset_for_digit(0), Some(1_000_000_000.0));
+        assert_eq!(time_scale_preset_for_digit(10), None);
+    }
+
+    #[test]
+    fn time_scale_format_uses_grouped_spanish_style_numbers() {
+        assert_eq!(format_time_scale(50_000.0), "50.000x");
+        assert_eq!(format_time_scale(1_000_000.0), "1.000.000x");
     }
 }

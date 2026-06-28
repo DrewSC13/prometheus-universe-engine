@@ -78,14 +78,14 @@ pub fn selected_body_compact_label(selected_body: SelectedBody) -> &'static str 
 pub fn selected_body_hud_summary(selected_body: SelectedBody) -> String {
     match selected_body_definition(selected_body) {
         Some(body) => format!(
-            "Seleccion: {}\nClase: {}\nRadio: {:.0} km\nMasa: {:.3e} kg\nOrbita: {}",
+            "Nombre: {}\nClase: {}\nRadio: {:.0} km\nMasa: {:.3e} kg\nOrbita: {}",
             body.name,
             body_class_name(body.class),
             body.physical_radius_meters / 1_000.0,
             body.mass_kg,
             body_orbit_parent_name(body)
         ),
-        None => "Seleccion: none\nClase: -\nRadio: -\nMasa: -\nOrbita: -".to_string(),
+        None => "Nombre: none\nClase: -\nRadio: -\nMasa: -\nOrbita: -".to_string(),
     }
 }
 
@@ -206,7 +206,7 @@ mod tests {
 
         let summary = selected_body_hud_summary(selected);
 
-        assert!(summary.contains("Seleccion: Tierra"));
+        assert!(summary.contains("Nombre: Tierra"));
         assert!(summary.contains("Clase: terrestrial planet"));
         assert!(summary.contains("Radio: 6371 km"));
         assert!(summary.contains("Masa: 5.972e24 kg"));

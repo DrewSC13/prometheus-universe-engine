@@ -5,7 +5,7 @@ use crate::interaction::selection::{
 };
 use crate::render::solar_system::{LabelVisibilityMode, OrbitVisibilityMode};
 use crate::simulation::bodies::{orbiting_bodies, root_bodies, SOLAR_SYSTEM_BODIES};
-use crate::time::{SimulationClock, TimeDirection};
+use crate::time::{format_time_scale, SimulationClock, TimeDirection};
 
 #[derive(Component, Debug)]
 pub struct SimulationHudText;
@@ -111,9 +111,9 @@ fn update_simulation_hud(
 
         if hud_visibility.compact {
             text.0 = format!(
-                "Prometheus Universe Engine | Fase 2 Body Inspector | JD {:.2} | x{:.0} | {} | pausa: {} | seleccion: {} | click seleccionar | G enfocar | H HUD | M modo",
+                "Prometheus | Fase 2 | JD {:.2} | vel {} | {} | pausa: {} | seleccion: {} | click seleccionar | G enfocar | H/M HUD",
                 simulation_time.jd_tdb,
-                simulation_time.time_scale,
+                format_time_scale(simulation_time.time_scale),
                 direction,
                 paused,
                 selected_body_label,
@@ -121,44 +121,36 @@ fn update_simulation_hud(
             continue;
         }
 
+        let time_scale_label = format_time_scale(simulation_time.time_scale);
+
         text.0 = format!(
-            "Prometheus Universe Engine\n\
-             Fase 1+ Visual Polish: Sistema Solar catalogado procedural\n\
+            "PROMETHEUS UNIVERSE ENGINE\n\
+             Fase 2 - Body Inspector\n\
+             -----------------------------\n\
              \n\
-             Catalogo:\n\
+             [CATALOGO]\n\
              Cuerpos totales: {}\n\
              Cuerpos raiz: {}\n\
              Cuerpos orbitando: {}\n\
              Etiquetas: {}\n\
              Orbitas: {}\n\
              \n\
-             Seleccion:\n\
+             [SELECCION]\n\
              {}\n\
              \n\
-             Tiempo:\n\
+             [TIEMPO]\n\
              JD TDB: {:.5}\n\
              Dias desde J2000: {:.2}\n\
-             Escala temporal: x{:.0}\n\
+             Velocidad: {}\n\
              Direccion: {}\n\
              Pausado: {}\n\
              \n\
-             Controles:\n\
-             Space = pausa/reanuda\n\
-             1-6 = velocidad\n\
-             B = invertir tiempo\n\
-             R = reset J2000\n\
-             L = etiquetas\n\
-             O = orbitas\n\
-             N = siguiente cuerpo\n\
-             P = cuerpo anterior\n\
-             G = enfocar seleccion\n\
-             Click izquierdo = seleccionar cuerpo\n\
-             Escape = limpiar seleccion\n\
-             C = vista general\n\
-             V = vista lejana\n\
-             F = sistema interior\n\
-             H = mostrar/ocultar HUD\n\
-             M = HUD compacto",
+             [CONTROLES]\n\
+             Mouse: click izquierdo selecciona\n\
+             Seleccion: N/P cambia | Escape limpia\n\
+             Camara: G enfoca | C/V/F vistas\n\
+             Tiempo: Space pausa | 1-9/0 velocidad | B invierte | R reset\n\
+             Visual: L etiquetas | O orbitas | H HUD | M compacto",
             total_bodies,
             root_body_count,
             orbiting_body_count,
@@ -167,7 +159,7 @@ fn update_simulation_hud(
             selected_body_summary,
             simulation_time.jd_tdb,
             simulation_time.days_since_j2000(),
-            simulation_time.time_scale,
+            time_scale_label,
             direction,
             paused,
         );

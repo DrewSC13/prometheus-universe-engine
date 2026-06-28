@@ -9,12 +9,14 @@ use prometheus_engine::interaction::focus::BodyFocusPlugin;
 use prometheus_engine::interaction::picking::BodyPickingPlugin;
 use prometheus_engine::interaction::selection::BodySelectionPlugin;
 use prometheus_engine::render::solar_system::SolarSystemRenderPlugin;
-use prometheus_engine::time::{SimulationClock, SimulationTime, SimulationTimeControlsPlugin};
+use prometheus_engine::time::{
+    SimulationClock, SimulationTime, SimulationTimeControlsPlugin, DEFAULT_TIME_SCALE,
+};
 use prometheus_engine::ui::hud::SimulationHudPlugin;
 
 fn main() {
     let mut simulation_time = SimulationTime::j2000();
-    simulation_time.set_time_scale(50_000.0);
+    simulation_time.set_time_scale(DEFAULT_TIME_SCALE);
 
     App::new()
         .add_plugins(DefaultPlugins)
@@ -56,7 +58,7 @@ fn setup(mut commands: Commands) {
 
     info!("Prometheus Universe Engine iniciado.");
     info!("Fase 1+ Visual Polish: Sistema Solar catalogado procedural.");
-    info!("Controles: Space pausa, 1-6 velocidad, B invierte tiempo, R reset.");
+    info!("Controles: Space pausa, 1-9/0 velocidad, B invierte tiempo, R reset.");
     info!("Interacción: click izquierdo selecciona, N/P cambia, G enfoca, Escape limpia.");
     info!("Render: fondo espacial negro, starfield procedural y polish visual espacial.");
 }
