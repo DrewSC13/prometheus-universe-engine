@@ -75,4 +75,10 @@ La demo actual muestra una escena educativa Sol-Tierra-Luna con:
 
 - Cierre de Fase 0.
 - Tag de versión.
-- Inicio Fase 1: Sistema Solar básico.
+- `v0.2.0-phase1`: Fase 1 MVP cerrada. Desarrollo posterior: visual polish del Sistema Solar catalogado procedural.
+
+
+## Estado actual
+
+- `v0.2.0-phase1`: Fase 1 MVP cerrada.
+- Desarrollo posterior: visual polish del Sistema Solar catalogado procedural.
