@@ -39,10 +39,12 @@ pub struct PlanetBandMarkerVisual {
 
 mod earth;
 mod saturn;
+mod starfield;
 mod sun;
 
 use self::earth::*;
 use self::saturn::*;
+use self::starfield::*;
 use self::sun::*;
 
 const AU_METERS: f64 = 149_597_870_700.0;
@@ -54,11 +56,6 @@ const SATELLITE_ORBIT_MARKERS: usize = 64;
 
 const PLANET_ORBIT_MARKER_RADIUS: f32 = 0.025;
 const SATELLITE_ORBIT_MARKER_RADIUS: f32 = 0.020;
-
-const STARFIELD_STAR_COUNT: usize = 1800;
-const STARFIELD_RADIUS: f32 = 420.0;
-const STARFIELD_MIN_SCALE: f32 = 0.016;
-const STARFIELD_MAX_SCALE: f32 = 0.075;
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LabelVisibilityMode {
@@ -138,9 +135,6 @@ pub struct OrbitMarkerVisual {
     pub index: usize,
     pub total: usize,
 }
-
-#[derive(Component, Debug, Clone, Copy)]
-pub struct StarfieldStarVisual;
 
 pub struct SolarSystemRenderPlugin;
 
@@ -359,25 +353,6 @@ fn spawn_solar_system_visuals(
         },
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
-}
-
-fn spawn_starfield(
-    commands: &mut Commands,
-    mesh: Handle<Mesh>,
-    materials: &[Handle<StandardMaterial>; 3],
-) {
-    for index in 0..STARFIELD_STAR_COUNT {
-        let position = starfield_position(index);
-        let scale = starfield_scale(index);
-        let material = materials[starfield_material_index(index)].clone();
-
-        commands.spawn((
-            Mesh3d(mesh.clone()),
-            MeshMaterial3d(material),
-            Transform::from_translation(position).with_scale(Vec3::splat(scale)),
-            StarfieldStarVisual,
-        ));
-    }
 }
 
 fn keyboard_label_controls(
@@ -650,31 +625,6 @@ fn orbit_marker_radius(orbit: OrbitDefinition) -> f32 {
         PLANET_ORBIT_MARKER_RADIUS
     } else {
         SATELLITE_ORBIT_MARKER_RADIUS
-    }
-}
-
-fn starfield_position(index: usize) -> Vec3 {
-    let i = index as f32 + 0.5;
-
-    let golden_angle = std::f32::consts::PI * (3.0 - 5.0_f32.sqrt());
-    let y = 1.0 - (i / STARFIELD_STAR_COUNT as f32) * 2.0;
-    let radius = (1.0 - y * y).sqrt();
-    let theta = golden_angle * i;
-
-    Vec3::new(theta.cos() * radius, y, theta.sin() * radius) * STARFIELD_RADIUS
-}
-
-fn starfield_scale(index: usize) -> f32 {
-    let noise = deterministic_noise(index, 12.9898);
-
-    STARFIELD_MIN_SCALE + (STARFIELD_MAX_SCALE - STARFIELD_MIN_SCALE) * noise
-}
-
-fn starfield_material_index(index: usize) -> usize {
-    match index % 11 {
-        0 | 5 => 1,
-        1 | 6 | 9 => 0,
-        _ => 2,
     }
 }
 

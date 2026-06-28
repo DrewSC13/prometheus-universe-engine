@@ -92,3 +92,22 @@ Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
 
 `mod sun;`
 `use self::sun::*;`
+
+
+## Quinto corte seguro: Starfield
+
+Se extrajo la lógica visual del campo estelar a:
+
+`engine/src/render/solar_system/starfield.rs`
+
+Incluye:
+
+- constantes de starfield;
+- componente visual de estrellas;
+- spawn del campo estelar;
+- helpers de posición, escala y material.
+
+Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
+
+`mod starfield;`
+`use self::starfield::*;`
