@@ -1,3 +1,5 @@
+use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use prometheus_engine::camera::presets::CameraViewPresetsPlugin;
 use prometheus_engine::camera::{FreeCamera, FreeCameraPlugin};
@@ -30,7 +32,12 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Camera3d::default(),
+        Camera3d {
+            hdr: true,
+            ..default()
+        },
+        Tonemapping::TonyMcMapface,
+        Bloom::NATURAL,
         FreeCamera,
         GlobalPositionComponent::default(),
         Transform::from_xyz(0.0, 30.0, 115.0).looking_at(Vec3::ZERO, Vec3::Y),
