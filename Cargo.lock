@@ -5105,7 +5105,6 @@ dependencies = [
  "bevy",
  "bevy_egui",
  "bytemuck",
- "glam 0.29.3",
  "memmap2",
  "nalgebra",
  "serde",

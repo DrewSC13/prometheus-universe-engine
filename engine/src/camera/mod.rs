@@ -1,6 +1,8 @@
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 
+use crate::coordinates::GlobalPositionComponent;
+
 #[derive(Component, Debug)]
 pub struct FreeCamera;
 
@@ -36,9 +38,9 @@ fn free_camera_movement(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     settings: Res<FreeCameraSettings>,
-    mut query: Query<&mut Transform, With<FreeCamera>>,
+    mut query: Query<(&mut Transform, Option<&mut GlobalPositionComponent>), With<FreeCamera>>,
 ) {
-    for mut transform in query.iter_mut() {
+    for (mut transform, global_position) in query.iter_mut() {
         let mut input = Vec3::ZERO;
 
         if keyboard.pressed(KeyCode::KeyW) {
@@ -78,9 +80,16 @@ fn free_camera_movement(
         let right = transform.rotation * Vec3::X;
         let up = Vec3::Y;
 
-        let movement = (right * input.x + up * input.y + forward * -input.z).normalize_or_zero();
+        let direction = (right * input.x + up * input.y + forward * -input.z).normalize_or_zero();
+        let delta = direction * speed * time.delta_secs();
 
-        transform.translation += movement * speed * time.delta_secs();
+        transform.translation += delta;
+
+        if let Some(mut global_position) = global_position {
+            global_position.position = global_position
+                .position
+                .translated_by_meters(delta.as_dvec3());
+        }
     }
 }
 
