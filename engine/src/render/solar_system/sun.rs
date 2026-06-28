@@ -1,4 +1,6 @@
-use super::{body_visual_position, deterministic_noise, spherical_fibonacci_direction};
+use super::{
+    body_visual_position, deterministic_noise, spherical_fibonacci_direction, sun_visual_radius,
+};
 
 use crate::simulation::bodies::{BodyId, SOLAR_SYSTEM_BODIES};
 use crate::time::SimulationClock;
