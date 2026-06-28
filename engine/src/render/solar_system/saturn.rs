@@ -14,7 +14,6 @@ pub(super) const SATURN_RING_MESH_BANDS: [(f32, f32); 3] =
 #[derive(Component, Debug, Clone, Copy)]
 pub(super) struct SaturnRingMeshVisual {
     pub parent_body_id: BodyId,
-    pub band_index: usize,
 }
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -42,10 +41,7 @@ pub(super) fn spawn_saturn_ring_mesh_bands(
             Mesh3d(mesh),
             MeshMaterial3d(material.clone()),
             Transform::from_translation(Vec3::ZERO),
-            SaturnRingMeshVisual {
-                parent_body_id,
-                band_index,
-            },
+            SaturnRingMeshVisual { parent_body_id },
             Name::new(format!("Saturn Ring Mesh Band {}", band_index)),
         ));
     }
