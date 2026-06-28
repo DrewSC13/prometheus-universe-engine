@@ -165,7 +165,7 @@ fn spawn_solar_system_visuals(
         ..default()
     });
 
-    for body in SOLAR_SYSTEM_BODIES {
+    for body in SOLAR_SYSTEM_BODIES.iter() {
         let material = materials.add(StandardMaterial {
             base_color: Color::srgb(body.color_srgb[0], body.color_srgb[1], body.color_srgb[2]),
             emissive: body_emissive_color(body),

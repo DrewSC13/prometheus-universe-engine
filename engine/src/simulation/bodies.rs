@@ -56,7 +56,7 @@ pub struct CelestialBodyDefinition {
     pub orbit: Option<OrbitDefinition>,
 }
 
-pub const SOLAR_SYSTEM_BODIES: [CelestialBodyDefinition; 21] = [
+pub const SOLAR_SYSTEM_BODIES: [CelestialBodyDefinition; 20] = [
     CelestialBodyDefinition {
         id: BodyId::Sun,
         name: "Sol",
