@@ -45,3 +45,26 @@ Este corte mantiene la API interna disponible para `solar_system.rs` mediante:
 
 `mod saturn;`
 `use self::saturn::*;`
+
+
+## Tercer corte seguro: Tierra
+
+Se extrajo la lógica visual de Tierra a:
+
+`engine/src/render/solar_system/earth.rs`
+
+Incluye:
+
+- constantes de atmósfera;
+- constantes de nubes;
+- constantes de landmasses;
+- componentes visuales de Tierra;
+- spawn/update de atmósfera;
+- spawn/update de nubes;
+- spawn/update de continentes procedurales;
+- helpers usados por tests.
+
+Este corte mantiene disponible la API interna para `solar_system.rs` mediante:
+
+`mod earth;`
+`use self::earth::*;`
