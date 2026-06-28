@@ -6,7 +6,7 @@ use crate::time::SimulationClock;
 use bevy::prelude::*;
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum LabelVisibilityMode {
+pub enum LabelVisibilityMode {
     MajorOnly,
     All,
     None,
