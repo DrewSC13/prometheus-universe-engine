@@ -7,7 +7,7 @@ use crate::simulation::bodies::BodyId;
 use crate::simulation::catalog::body_definition;
 
 const PICKING_RADIUS_FACTOR: f32 = 1.35;
-const PICKING_MIN_PADDING: f32 = 0.24;
+const PICKING_MIN_PADDING: f32 = 0.25;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BodyPickHit {
