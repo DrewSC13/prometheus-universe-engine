@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::render::solar_system::LabelVisibilityMode;
 use crate::simulation::bodies::{orbiting_bodies, root_bodies, SOLAR_SYSTEM_BODIES};
 use crate::time::{SimulationClock, TimeDirection};
 
@@ -35,6 +36,7 @@ fn spawn_simulation_hud(mut commands: Commands) {
 
 fn update_simulation_hud(
     simulation_clock: Res<SimulationClock>,
+    label_visibility_mode: Option<Res<LabelVisibilityMode>>,
     mut query: Query<&mut Text, With<SimulationHudText>>,
 ) {
     let simulation_time = simulation_clock.0;
@@ -50,6 +52,11 @@ fn update_simulation_hud(
     let root_body_count = root_bodies().count();
     let orbiting_body_count = orbiting_bodies().count();
 
+    let label_mode = label_visibility_mode
+        .as_deref()
+        .map(LabelVisibilityMode::as_str)
+        .unwrap_or("unknown");
+
     for mut text in query.iter_mut() {
         text.0 = format!(
             "Prometheus Universe Engine\n\
@@ -59,6 +66,7 @@ fn update_simulation_hud(
              Cuerpos totales: {}\n\
              Cuerpos raiz: {}\n\
              Cuerpos orbitando: {}\n\
+             Etiquetas: {}\n\
              \n\
              Tiempo:\n\
              JD TDB: {:.5}\n\
@@ -71,10 +79,12 @@ fn update_simulation_hud(
              Space = pausa/reanuda\n\
              1-6 = velocidad\n\
              B = invertir tiempo\n\
-             R = reset J2000",
+             R = reset J2000\n\
+             L = etiquetas",
             total_bodies,
             root_body_count,
             orbiting_body_count,
+            label_mode,
             simulation_time.jd_tdb,
             simulation_time.days_since_j2000(),
             simulation_time.time_scale,
