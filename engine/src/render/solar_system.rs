@@ -13,8 +13,10 @@ use crate::simulation::catalog::{
 use crate::time::SimulationClock;
 
 const SPACE_AMBIENT_BRIGHTNESS: f32 = 0.018;
-const SELECTED_BODY_INDICATOR_RADIUS_FACTOR: f32 = 1.28;
-const SELECTED_BODY_INDICATOR_MIN_PADDING: f32 = 0.38;
+const SELECTED_BODY_INDICATOR_RADIUS_FACTOR: f32 = 1.12;
+const SELECTED_BODY_INDICATOR_MIN_PADDING: f32 = 0.30;
+const SELECTED_BODY_INDICATOR_PULSE_AMPLITUDE: f32 = 0.035;
+const SELECTED_BODY_INDICATOR_PULSE_PERIOD_DAYS: f64 = 2.0;
 
 mod earth;
 mod labels;
@@ -208,8 +210,8 @@ fn spawn_solar_system_visuals(
     ];
 
     let selected_body_indicator_material = materials.add(StandardMaterial {
-        base_color: Color::srgba(0.35, 0.85, 1.0, 0.22),
-        emissive: LinearRgba::rgb(0.12, 0.42, 0.75),
+        base_color: Color::srgba(0.30, 0.78, 1.0, 0.16),
+        emissive: LinearRgba::rgb(0.08, 0.28, 0.50),
         alpha_mode: AlphaMode::Blend,
         unlit: true,
         ..default()
@@ -336,7 +338,10 @@ fn update_selected_body_indicator(
 
     for (mut transform, mut visibility) in query.iter_mut() {
         transform.translation = position;
-        transform.scale = Vec3::splat(selected_body_indicator_scale(body.visual_radius));
+        transform.scale = Vec3::splat(selected_body_indicator_pulsed_scale(
+            body.visual_radius,
+            simulation_clock.0.days_since_j2000(),
+        ));
         *visibility = Visibility::Visible;
     }
 }
@@ -353,6 +358,18 @@ fn hide_selected_body_indicators(
 fn selected_body_indicator_scale(body_visual_radius: f32) -> f32 {
     (body_visual_radius * SELECTED_BODY_INDICATOR_RADIUS_FACTOR)
         .max(body_visual_radius + SELECTED_BODY_INDICATOR_MIN_PADDING)
+}
+
+fn selected_body_indicator_pulsed_scale(body_visual_radius: f32, days_since_j2000: f64) -> f32 {
+    selected_body_indicator_scale(body_visual_radius)
+        * selected_body_indicator_pulse_multiplier(days_since_j2000)
+}
+
+fn selected_body_indicator_pulse_multiplier(days_since_j2000: f64) -> f32 {
+    let phase =
+        days_since_j2000 / SELECTED_BODY_INDICATOR_PULSE_PERIOD_DAYS * std::f64::consts::TAU;
+
+    1.0 + phase.sin() as f32 * SELECTED_BODY_INDICATOR_PULSE_AMPLITUDE
 }
 
 fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {

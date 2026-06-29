@@ -257,7 +257,7 @@ fn selected_body_indicator_scale_exceeds_body_radius() {
 
 #[test]
 fn selected_body_indicator_scale_keeps_small_bodies_visible() {
-    assert!(super::selected_body_indicator_scale(0.1) >= 0.48);
+    assert!(super::selected_body_indicator_scale(0.1) >= 0.40);
 }
 
 #[test]
@@ -266,4 +266,30 @@ fn solar_body_visual_position_exposes_sun_position() {
         super::solar_body_visual_position(super::BodyId::Sun, 0.0),
         Some(super::Vec3::ZERO)
     );
+}
+
+#[test]
+fn selected_body_indicator_scale_is_tighter_for_large_bodies() {
+    let sun_radius = 3.5;
+    let scale = super::selected_body_indicator_scale(sun_radius);
+
+    assert!(scale < sun_radius * 1.20);
+    assert!(scale > sun_radius);
+}
+
+#[test]
+fn selected_body_indicator_pulse_multiplier_stays_subtle() {
+    for days in [0.0, 0.5, 1.0, 1.5, 2.0] {
+        let multiplier = super::selected_body_indicator_pulse_multiplier(days);
+
+        assert!((0.96..=1.04).contains(&multiplier));
+    }
+}
+
+#[test]
+fn selected_body_indicator_pulsed_scale_preserves_small_body_visibility() {
+    let base_scale = super::selected_body_indicator_scale(0.1);
+    let pulsed_scale = super::selected_body_indicator_pulsed_scale(0.1, 1.5);
+
+    assert!(pulsed_scale >= base_scale * 0.96);
 }
