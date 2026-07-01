@@ -207,14 +207,6 @@ pub(super) fn solar_surface_feature_animated_scale(index: usize, days_since_j200
     base_scale * (1.0 + phase.sin() * SOLAR_SURFACE_PULSE_AMPLITUDE)
 }
 
-pub(super) fn solar_surface_feature_animated_scale(index: usize, days_since_j2000: f64) -> f32 {
-    let base_scale = solar_surface_feature_scale(index);
-    let phase = days_since_j2000 as f32 * SOLAR_SURFACE_PULSE_SPEED
-        + deterministic_noise(index, 71.77) * std::f32::consts::TAU;
-
-    base_scale * (1.0 + phase.sin() * SOLAR_SURFACE_PULSE_AMPLITUDE)
-}
-
 pub(super) fn solar_corona_marker_base_scale(shell_hint: usize) -> f32 {
     if shell_hint == 0 {
         SOLAR_CORONA_INNER_SCALE
