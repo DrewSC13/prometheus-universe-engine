@@ -183,31 +183,33 @@ fn spawn_solar_system_visuals(
 
     let solar_surface_materials = [
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.54, 0.08),
-            emissive: LinearRgba::rgb(2.10, 0.72, 0.10),
+            base_color: Color::srgb(1.0, 0.48, 0.055),
+            emissive: LinearRgba::rgb(2.70, 0.82, 0.10),
             ..default()
         }),
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.92, 0.34),
-            emissive: LinearRgba::rgb(2.80, 1.35, 0.26),
+            base_color: Color::srgb(1.0, 0.86, 0.24),
+            emissive: LinearRgba::rgb(3.65, 1.72, 0.34),
             ..default()
         }),
         materials.add(StandardMaterial {
-            base_color: Color::srgb(0.98, 0.24, 0.035),
-            emissive: LinearRgba::rgb(1.65, 0.30, 0.045),
+            base_color: Color::srgb(0.22, 0.038, 0.012),
+            emissive: LinearRgba::rgb(0.18, 0.026, 0.006),
             ..default()
         }),
     ];
 
     let solar_corona_materials = [
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.62, 0.12),
-            emissive: LinearRgba::rgb(2.35, 0.72, 0.10),
+            base_color: Color::srgba(1.0, 0.58, 0.09, 0.76),
+            alpha_mode: AlphaMode::Blend,
+            emissive: LinearRgba::rgb(1.95, 0.56, 0.08),
             ..default()
         }),
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.86, 0.36),
-            emissive: LinearRgba::rgb(1.65, 0.88, 0.24),
+            base_color: Color::srgba(1.0, 0.76, 0.25, 0.48),
+            alpha_mode: AlphaMode::Blend,
+            emissive: LinearRgba::rgb(1.22, 0.62, 0.16),
             ..default()
         }),
     ];
@@ -386,7 +388,7 @@ pub(super) fn realistic_scene_units_from_meters(meters: f64) -> f32 {
 
 fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
     match body.class {
-        BodyClass::Star => LinearRgba::rgb(3.20, 1.35, 0.28),
+        BodyClass::Star => LinearRgba::rgb(4.40, 1.75, 0.34),
         _ => LinearRgba::BLACK,
     }
 }

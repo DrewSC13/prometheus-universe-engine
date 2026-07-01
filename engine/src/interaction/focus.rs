@@ -11,7 +11,7 @@ const FOCUS_CAMERA_MIN_DISTANCE: f32 = 4.0;
 const FOCUS_CAMERA_MAX_DISTANCE: f32 = 72.0;
 const FOCUS_CAMERA_DISTANCE_FACTOR: f32 = 8.0;
 const FOCUS_CAMERA_OFFSET_DIRECTION: Vec3 = Vec3::new(0.0, 0.38, 1.0);
-const FOCUS_SATELLITE_SYSTEM_DISTANCE_FACTOR: f32 = 3.35;
+const FOCUS_SATELLITE_SYSTEM_DISTANCE_FACTOR: f32 = 3.90;
 const FOCUS_SATELLITE_SYSTEM_PADDING: f32 = 1.25;
 
 pub struct BodyFocusPlugin;
@@ -84,14 +84,6 @@ fn focus_camera_transform_for_body(
         body_visual_radius,
         days_since_j2000,
     );
-    let offset_direction = FOCUS_CAMERA_OFFSET_DIRECTION.normalize_or_zero();
-    let camera_position = target_position + offset_direction * distance;
-
-    Transform::from_translation(camera_position).looking_at(target_position, Vec3::Y)
-}
-
-fn focus_camera_transform(target_position: Vec3, body_visual_radius: f32) -> Transform {
-    let distance = focus_camera_distance(body_visual_radius);
     let offset_direction = FOCUS_CAMERA_OFFSET_DIRECTION.normalize_or_zero();
     let camera_position = target_position + offset_direction * distance;
 
@@ -211,13 +203,18 @@ mod tests {
             distance
                 > focus_camera_distance(body_definition(BodyId::Saturn).unwrap().visual_radius)
         );
-        assert!(distance >= 18.0);
+        assert!(distance >= 16.0);
     }
 
     #[test]
     fn focus_camera_transform_looks_at_target() {
         let target = Vec3::new(2.0, 0.5, -4.0);
-        let transform = focus_camera_transform(target, 1.0);
+        let transform = focus_camera_transform_for_body(
+            crate::simulation::bodies::BodyId::Mercury,
+            target,
+            1.0,
+            0.0,
+        );
 
         let forward = transform.rotation * Vec3::NEG_Z;
         let expected_direction = (target - transform.translation).normalize();

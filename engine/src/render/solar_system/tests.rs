@@ -420,6 +420,34 @@ fn solar_corona_radius_multiplier_stays_subtle() {
 
 #[test]
 fn solar_fire_visual_density_is_higher_than_base_phase() {
-    assert!(super::sun::SOLAR_SURFACE_FEATURE_COUNT >= 360);
-    assert!(super::sun::SOLAR_CORONA_MARKERS_PER_SHELL >= 400);
+    assert!(super::sun::SOLAR_SURFACE_FEATURE_COUNT >= 600);
+    assert!(super::sun::SOLAR_CORONA_MARKERS_PER_SHELL >= 180);
+}
+
+#[test]
+fn solar_surface_materials_include_dark_sunspots() {
+    let dark_spot_count = (0..super::sun::SOLAR_SURFACE_FEATURE_COUNT)
+        .filter(|index| super::sun::solar_surface_material_index(*index) == 2)
+        .count();
+
+    assert!(dark_spot_count > 12);
+}
+
+#[test]
+fn solar_surface_has_hot_cells_and_base_cells() {
+    let hot_cell_count = (0..super::sun::SOLAR_SURFACE_FEATURE_COUNT)
+        .filter(|index| super::sun::solar_surface_material_index(*index) == 1)
+        .count();
+
+    let base_cell_count = (0..super::sun::SOLAR_SURFACE_FEATURE_COUNT)
+        .filter(|index| super::sun::solar_surface_material_index(*index) == 0)
+        .count();
+
+    assert!(hot_cell_count > 80);
+    assert!(base_cell_count > 120);
+}
+
+#[test]
+fn solar_reference_corona_is_less_particle_dense_than_surface() {
+    assert!(super::sun::SOLAR_SURFACE_FEATURE_COUNT > super::sun::SOLAR_CORONA_MARKERS_PER_SHELL);
 }
