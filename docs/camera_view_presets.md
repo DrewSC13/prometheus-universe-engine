@@ -6,7 +6,7 @@ Agregar presets de cámara para navegar rápidamente durante la Fase 1.
 
 ## Controles
 
-- C: vista general del Sistema Solar educativo.
+- C: vista general del Sistema Solar realista.
 - V: vista lejana / panorámica.
 - F: vista interior.
 

@@ -31,7 +31,7 @@ El render ahora usa SOLAR_SYSTEM_BODIES como fuente principal para crear:
 
 La simulación mantiene posiciones físicas en metros usando f64.
 
-La visualización usa escala educativa para permitir ver el Sistema Solar completo en una escena navegable.
+La visualización usa escala realista para permitir ver el Sistema Solar completo en una escena navegable.
 
 ## Estado
 

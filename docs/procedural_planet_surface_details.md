@@ -15,7 +15,7 @@ Mejorar la identidad visual de los planetas sin depender todavía de texturas ex
 
 ## Principio visual
 
-La escena sigue siendo educativa, pero los cuerpos ya no dependen solamente de esferas de color plano.
+La escena sigue siendo realista, pero los cuerpos ya no dependen solamente de esferas de color plano.
 
 ## Limitación actual
 

@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Mejorar la identidad visual de la Tierra dentro del Sistema Solar educativo.
+Mejorar la identidad visual de la Tierra dentro del Sistema Solar realista.
 
 ## Cambios implementados
 

@@ -14,7 +14,7 @@ Agregar rotación axial a cuerpos del sistema solar usando periodos de rotación
 
 ## Escala visual
 
-La posición orbital sigue siendo educativa: se conserva la dirección física calculada desde el catálogo, pero la distancia visual se comprime para que el sistema sea navegable.
+La posición orbital sigue siendo realista: se conserva la dirección física calculada desde el catálogo, pero la distancia orbital se mantiene proporcional al dato físico para que el sistema sea navegable.
 
 ## Luna
 

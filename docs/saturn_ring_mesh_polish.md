@@ -16,7 +16,7 @@ Mejorar la presentación visual de Saturno agregando una malla anular transparen
 
 La malla usa geometría generada en runtime, sin texturas externas.
 
-La proyección mantiene la misma compresión vertical que los marcadores anteriores para conservar la estética educativa actual.
+La proyección mantiene la misma compresión vertical que los marcadores anteriores para conservar la estética realista actual.
 
 ## Estado
 

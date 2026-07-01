@@ -25,4 +25,4 @@ Se agregan etiquetas 2D para:
 
 Las posiciones físicas siguen siendo calculadas en metros usando f64.
 
-La escena visual usa escala educativa para facilitar comprensión y depuración.
+La escena visual usa escala realista para facilitar comprensión y depuración.

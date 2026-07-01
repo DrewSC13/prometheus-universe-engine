@@ -16,7 +16,7 @@ Estado: completado funcionalmente.
 - Coordenadas globales/locales.
 - Floating Origin runtime.
 - Simulación analítica Sol-Tierra-Luna.
-- Render educativo Sol-Tierra-Luna.
+- Render realista Sol-Tierra-Luna.
 - Órbitas visuales.
 - Etiquetas básicas.
 - HUD runtime.
@@ -24,7 +24,7 @@ Estado: completado funcionalmente.
 
 ## Fase 1: Sistema Solar básico
 
-Objetivo: expandir la demo hacia un Sistema Solar educativo.
+Objetivo: expandir la demo hacia un Sistema Solar realista.
 
 ### Pendiente
 

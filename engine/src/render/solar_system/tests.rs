@@ -125,7 +125,7 @@ fn satellite_orbit_visual_radius_scales_with_distance() {
         phase_radians: 0.0,
     };
 
-    assert!(educational_orbit_radius(titan_orbit) > educational_orbit_radius(moon_orbit));
+    assert!(realistic_orbit_radius(titan_orbit) > realistic_orbit_radius(moon_orbit));
 }
 
 #[test]
@@ -292,4 +292,93 @@ fn selected_body_indicator_pulsed_scale_preserves_small_body_visibility() {
     let pulsed_scale = super::selected_body_indicator_pulsed_scale(0.1, 1.5);
 
     assert!(pulsed_scale >= base_scale * 0.96);
+}
+
+#[test]
+fn realistic_scene_units_maps_one_au_to_scene_units() {
+    let one_au = 149_597_870_700.0;
+
+    assert!((super::realistic_scene_units_from_meters(one_au) - 16.0).abs() < 0.001);
+}
+
+#[test]
+fn earth_visual_position_uses_realistic_au_scale() {
+    let earth_position =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Earth, 0.0).unwrap();
+
+    assert!((earth_position.length() - 16.0).abs() < 0.01);
+}
+
+#[test]
+fn moon_visual_distance_preserves_realistic_parent_scale() {
+    let earth_position =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Earth, 0.0).unwrap();
+    let moon_position =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Moon, 0.0).unwrap();
+
+    let moon_orbit =
+        crate::simulation::catalog::body_definition(crate::simulation::bodies::BodyId::Moon)
+            .unwrap()
+            .orbit
+            .unwrap();
+
+    let expected_moon_distance = super::realistic_orbit_radius(moon_orbit);
+
+    assert!((moon_position.distance(earth_position) - expected_moon_distance).abs() < 0.001);
+    assert!(expected_moon_distance > 1.4);
+}
+
+#[test]
+fn outer_planets_stay_inside_balanced_realistic_scene() {
+    let jupiter =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Jupiter, 0.0).unwrap();
+    let saturn =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Saturn, 0.0).unwrap();
+    let uranus =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Uranus, 0.0).unwrap();
+    let neptune =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Neptune, 0.0).unwrap();
+
+    assert!(jupiter.length() > 35.0);
+    assert!(saturn.length() > jupiter.length());
+    assert!(uranus.length() > saturn.length());
+    assert!(neptune.length() > uranus.length());
+    assert!(neptune.length() < 150.0);
+}
+
+#[test]
+fn cataloged_major_moons_keep_visible_local_spacing() {
+    use crate::simulation::bodies::BodyId;
+    use crate::simulation::catalog::body_definition;
+
+    for moon_id in [
+        BodyId::Moon,
+        BodyId::Io,
+        BodyId::Europa,
+        BodyId::Ganymede,
+        BodyId::Callisto,
+        BodyId::Titan,
+        BodyId::Enceladus,
+        BodyId::Rhea,
+        BodyId::Titania,
+        BodyId::Oberon,
+        BodyId::Triton,
+    ] {
+        let moon = body_definition(moon_id).unwrap();
+        let orbit = moon.orbit.unwrap();
+        let parent_position = super::solar_body_visual_position(orbit.parent, 0.0).unwrap();
+        let moon_position = super::solar_body_visual_position(moon_id, 0.0).unwrap();
+
+        assert!(moon_position.distance(parent_position) >= 1.4);
+    }
+}
+
+#[test]
+fn compressed_realistic_scale_keeps_earth_inside_jupiter() {
+    let earth =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Earth, 0.0).unwrap();
+    let jupiter =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Jupiter, 0.0).unwrap();
+
+    assert!(earth.length() < jupiter.length());
 }

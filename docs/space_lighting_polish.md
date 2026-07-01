@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Mejorar la lectura visual del Sistema Solar educativo con un fondo espacial más profundo y una iluminación más coherente.
+Mejorar la lectura visual del Sistema Solar realista con un fondo espacial más profundo y una iluminación más coherente.
 
 ## Cambios
 

@@ -17,6 +17,9 @@ const SELECTED_BODY_INDICATOR_RADIUS_FACTOR: f32 = 1.12;
 const SELECTED_BODY_INDICATOR_MIN_PADDING: f32 = 0.30;
 const SELECTED_BODY_INDICATOR_PULSE_AMPLITUDE: f32 = 0.035;
 const SELECTED_BODY_INDICATOR_PULSE_PERIOD_DAYS: f64 = 2.0;
+const ASTRONOMICAL_UNIT_METERS: f64 = 149_597_870_700.0;
+const REALISTIC_AU_SCENE_UNITS: f64 = 16.0;
+const REALISTIC_PLANETARY_ORBIT_EXPONENT: f64 = 0.62;
 
 mod earth;
 mod labels;
@@ -372,6 +375,15 @@ fn selected_body_indicator_pulse_multiplier(days_since_j2000: f64) -> f32 {
     1.0 + phase.sin() as f32 * SELECTED_BODY_INDICATOR_PULSE_AMPLITUDE
 }
 
+pub(super) fn realistic_scene_units_from_meters(meters: f64) -> f32 {
+    let astronomical_units = meters / ASTRONOMICAL_UNIT_METERS;
+
+    (astronomical_units
+        .max(0.0)
+        .powf(REALISTIC_PLANETARY_ORBIT_EXPONENT)
+        * REALISTIC_AU_SCENE_UNITS) as f32
+}
+
 fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
     match body.class {
         BodyClass::Star => LinearRgba::rgb(2.25, 1.05, 0.22),
@@ -429,16 +441,14 @@ fn body_visual_position(id: BodyId, days_since_j2000: f64) -> Option<Vec3> {
     match body.orbit {
         Some(orbit) => {
             let parent_visual_position = body_visual_position(orbit.parent, days_since_j2000)?;
-
             let body_physical_position = body_position_meters(id, days_since_j2000)?;
             let parent_physical_position = body_position_meters(orbit.parent, days_since_j2000)?;
-
             let physical_direction =
                 (body_physical_position - parent_physical_position).normalize_or_zero();
 
             Some(
                 parent_visual_position
-                    + physical_direction.as_vec3() * educational_orbit_radius(orbit),
+                    + physical_direction.as_vec3() * realistic_orbit_radius(orbit),
             )
         }
         None => Some(Vec3::ZERO),

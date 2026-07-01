@@ -1,4 +1,4 @@
-# Escala educativa Sol-Tierra-Luna
+# Escala realista Sol-Tierra-Luna
 
 ## Objetivo
 
@@ -8,7 +8,7 @@ Hacer que Sol, Tierra y Luna sean visibles al mismo tiempo durante la Fase 0.
 
 Las posiciones físicas reales se mantienen en metros usando f64.
 
-El render usa una escala educativa separada para que los cuerpos puedan verse juntos en una escena navegable.
+El render usa una escala realista separada para que los cuerpos puedan verse juntos en una escena navegable.
 
 ## Valores iniciales
 

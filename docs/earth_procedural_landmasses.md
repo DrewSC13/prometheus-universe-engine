@@ -16,7 +16,7 @@ Mejorar la identidad visual de la Tierra agregando continentes procedurales sobr
 
 La implementación sigue sin usar texturas externas.
 
-Los continentes se representan como marcadores pequeños agrupados, suficientes para que la Tierra sea reconocible a distancia dentro de la escala educativa actual.
+Los continentes se representan como marcadores pequeños agrupados, suficientes para que la Tierra sea reconocible a distancia dentro de la escala realista actual.
 
 ## Limitación actual
 

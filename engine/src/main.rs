@@ -1,7 +1,7 @@
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use prometheus_engine::camera::presets::CameraViewPresetsPlugin;
+use prometheus_engine::camera::presets::{initial_camera_transform, CameraViewPresetsPlugin};
 use prometheus_engine::camera::{FreeCamera, FreeCameraPlugin};
 use prometheus_engine::coordinates::GlobalPositionComponent;
 use prometheus_engine::floating_origin::FloatingOriginRuntimePlugin;
@@ -45,7 +45,7 @@ fn setup(mut commands: Commands) {
         Bloom::NATURAL,
         FreeCamera,
         GlobalPositionComponent::default(),
-        Transform::from_xyz(0.0, 30.0, 115.0).looking_at(Vec3::ZERO, Vec3::Y),
+        initial_camera_transform(),
     ));
 
     commands.spawn((
