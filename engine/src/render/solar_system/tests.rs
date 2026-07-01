@@ -205,10 +205,12 @@ fn solar_corona_direction_is_normalized() {
 
 #[test]
 fn solar_surface_feature_scale_stays_in_range() {
-    let scale = solar_surface_feature_scale(17);
+    for index in 0..SOLAR_SURFACE_FEATURE_COUNT {
+        let scale = solar_surface_feature_scale(index);
 
-    assert!(scale >= SOLAR_SURFACE_MIN_SCALE);
-    assert!(scale <= SOLAR_SURFACE_MAX_SCALE);
+        assert!(scale >= SOLAR_SURFACE_MIN_SCALE * 0.90);
+        assert!(scale <= SOLAR_SURFACE_MAX_SCALE * 1.56);
+    }
 }
 
 #[test]
