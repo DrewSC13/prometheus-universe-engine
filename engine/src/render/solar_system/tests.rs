@@ -125,7 +125,7 @@ fn satellite_orbit_visual_radius_scales_with_distance() {
         phase_radians: 0.0,
     };
 
-    assert!(educational_orbit_radius(titan_orbit) > educational_orbit_radius(moon_orbit));
+    assert!(realistic_orbit_radius(titan_orbit) > realistic_orbit_radius(moon_orbit));
 }
 
 #[test]
@@ -292,4 +292,31 @@ fn selected_body_indicator_pulsed_scale_preserves_small_body_visibility() {
     let pulsed_scale = super::selected_body_indicator_pulsed_scale(0.1, 1.5);
 
     assert!(pulsed_scale >= base_scale * 0.96);
+}
+
+#[test]
+fn realistic_scene_units_maps_one_au_to_scene_units() {
+    let one_au = 149_597_870_700.0;
+
+    assert!((super::realistic_scene_units_from_meters(one_au) - 36.0).abs() < 0.001);
+}
+
+#[test]
+fn earth_visual_position_uses_realistic_au_scale() {
+    let earth_position =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Earth, 0.0).unwrap();
+
+    assert!((earth_position.length() - 36.0).abs() < 0.01);
+}
+
+#[test]
+fn moon_visual_distance_preserves_realistic_parent_scale() {
+    let earth_position =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Earth, 0.0).unwrap();
+    let moon_position =
+        super::solar_body_visual_position(crate::simulation::bodies::BodyId::Moon, 0.0).unwrap();
+
+    let expected_moon_distance = super::realistic_scene_units_from_meters(384_400_000.0);
+
+    assert!((moon_position.distance(earth_position) - expected_moon_distance).abs() < 0.001);
 }

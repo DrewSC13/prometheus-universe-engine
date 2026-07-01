@@ -17,7 +17,7 @@ La Fase 0 del Prometheus Universe Engine ya cuenta con una demo funcional Sol-Ti
 - Posiciones locales para render.
 - Floating Origin runtime.
 - Simulación analítica Sol-Tierra-Luna.
-- Render educativo Sol-Tierra-Luna.
+- Render realista Sol-Tierra-Luna.
 - Órbitas visuales.
 - Etiquetas básicas.
 - HUD runtime.

@@ -1,13 +1,10 @@
-use super::{body_visual_position, OrbitVisibilityMode};
+use super::{body_visual_position, realistic_scene_units_from_meters, OrbitVisibilityMode};
 
 use crate::simulation::bodies::{BodyId, OrbitDefinition, SOLAR_SYSTEM_BODIES};
 use crate::time::SimulationClock;
 
 use bevy::prelude::*;
 
-pub(super) const AU_METERS: f64 = 149_597_870_700.0;
-pub(super) const LUNAR_DISTANCE_METERS: f64 = 384_400_000.0;
-pub(super) const MAX_SATELLITE_ORBIT_VISUAL_RADIUS: f32 = 5.8;
 pub(super) const PLANET_ORBIT_MARKERS: usize = 128;
 pub(super) const SATELLITE_ORBIT_MARKERS: usize = 64;
 pub(super) const PLANET_ORBIT_MARKER_RADIUS: f32 = 0.025;
@@ -86,7 +83,7 @@ pub(super) fn update_orbit_markers(
 
         let angle = std::f32::consts::TAU * marker.index as f32 / marker.total as f32;
         let circle_position = Vec3::new(angle.cos(), 0.0, angle.sin());
-        let visual_radius = educational_orbit_radius(orbit);
+        let visual_radius = realistic_orbit_radius(orbit);
 
         transform.translation = parent_visual_position + circle_position * visual_radius;
     }
@@ -119,16 +116,8 @@ pub(super) fn is_planetary_orbit(body_id: BodyId) -> bool {
         .is_some_and(|orbit| orbit.parent == BodyId::Sun)
 }
 
-pub(super) fn educational_orbit_radius(orbit: OrbitDefinition) -> f32 {
-    if orbit.parent == BodyId::Sun {
-        let au = orbit.semi_major_axis_meters / AU_METERS;
-        10.0 + au.sqrt() as f32 * 10.0
-    } else {
-        let normalized_distance = orbit.semi_major_axis_meters / LUNAR_DISTANCE_METERS;
-        let scaled_radius = 1.2 + normalized_distance.sqrt() as f32;
-
-        scaled_radius.clamp(1.6, MAX_SATELLITE_ORBIT_VISUAL_RADIUS)
-    }
+pub(super) fn realistic_orbit_radius(orbit: OrbitDefinition) -> f32 {
+    realistic_scene_units_from_meters(orbit.semi_major_axis_meters)
 }
 
 pub(super) fn orbit_marker_count(orbit: OrbitDefinition) -> usize {

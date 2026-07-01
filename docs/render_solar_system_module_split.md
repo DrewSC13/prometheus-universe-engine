@@ -126,7 +126,7 @@ Incluye:
 - spawn de marcadores orbitales;
 - actualización de marcadores orbitales;
 - visibilidad orbital;
-- helper de radio educativo de órbita;
+- helper de radio realista de órbita;
 - helpers de cantidad y tamaño de marcadores orbitales.
 
 Este corte mantiene disponible la API interna para `solar_system.rs` mediante:

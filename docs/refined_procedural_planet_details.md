@@ -25,6 +25,6 @@ Ahora:
 
 ## Nota técnica
 
-Esto sigue siendo un sistema procedural educativo.
+Esto sigue siendo un sistema procedural realista.
 
 El siguiente paso visual realista será migrar estos detalles hacia materiales, shaders, mapas procedurales o texturas PBR.

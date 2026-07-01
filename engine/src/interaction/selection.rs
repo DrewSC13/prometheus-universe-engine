@@ -85,7 +85,7 @@ pub fn selected_body_compact_label(selected_body: SelectedBody) -> &'static str 
 pub fn selected_body_hud_summary(selected_body: SelectedBody, days_since_j2000: f64) -> String {
     match selected_body_definition(selected_body) {
         Some(body) => format!(
-            "Nombre: {}\nClase: {}\nRadio: {}\nMasa: {:.3e} kg\nOrbita: {}\nDist. al Sol: {}\nDist. al padre: {}\nPeriodo orbital: {}\nRotacion: {}\nInclinacion axial: {:.2} deg\nEscala visual: educativa",
+            "Nombre: {}\nClase: {}\nRadio: {}\nMasa: {:.3e} kg\nOrbita: {}\nDist. al Sol: {}\nDist. al padre: {}\nPeriodo orbital: {}\nRotacion: {}\nInclinacion axial: {:.2} deg\nEscala orbital: realista",
             body.name,
             body_class_name(body.class),
             format_radius_meters(body.physical_radius_meters),
@@ -97,7 +97,7 @@ pub fn selected_body_hud_summary(selected_body: SelectedBody, days_since_j2000: 
             format_rotation_period_hours(body_rotation_period_hours(body.id)),
             body_axial_tilt_degrees(body.id)
         ),
-        None => "Nombre: none\nClase: -\nRadio: -\nMasa: -\nOrbita: -\nDist. al Sol: -\nDist. al padre: -\nPeriodo orbital: -\nRotacion: -\nInclinacion axial: -\nEscala visual: educativa".to_string(),
+        None => "Nombre: none\nClase: -\nRadio: -\nMasa: -\nOrbita: -\nDist. al Sol: -\nDist. al padre: -\nPeriodo orbital: -\nRotacion: -\nInclinacion axial: -\nEscala orbital: realista".to_string(),
     }
 }
 
@@ -296,7 +296,7 @@ mod tests {
         assert!(summary.contains("Periodo orbital:"));
         assert!(summary.contains("Rotacion:"));
         assert!(summary.contains("Inclinacion axial: 23.44 deg"));
-        assert!(summary.contains("Escala visual: educativa"));
+        assert!(summary.contains("Escala orbital: realista"));
     }
 
     #[test]

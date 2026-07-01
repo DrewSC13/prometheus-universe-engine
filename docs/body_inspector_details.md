@@ -14,7 +14,7 @@ El HUD de selección ahora incluye:
 - periodo de rotación;
 - inclinación axial;
 - clase del cuerpo en español ASCII;
-- aviso de escala visual educativa.
+- aviso de escala orbital realista.
 
 ## Modelo de distancia
 
@@ -22,4 +22,4 @@ Las distancias se calculan desde `body_position_meters`, usando el modelo orbita
 
 ## Escala visual
 
-El render mantiene escala visual educativa: las posiciones físicas existen en metros, pero el render comprime distancias para navegación y lectura.
+El render mantiene escala orbital realista: las posiciones físicas existen en metros, pero el render mantiene distancias proporcionales para navegación y lectura.
