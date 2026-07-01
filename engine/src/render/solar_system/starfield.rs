@@ -3,7 +3,7 @@ use super::deterministic_noise;
 use bevy::prelude::*;
 
 pub(super) const STARFIELD_STAR_COUNT: usize = 1800;
-pub(super) const STARFIELD_RADIUS: f32 = 4_800.0;
+pub(super) const STARFIELD_RADIUS: f32 = 900.0;
 pub(super) const STARFIELD_MIN_SCALE: f32 = 0.016;
 pub(super) const STARFIELD_MAX_SCALE: f32 = 0.075;
 

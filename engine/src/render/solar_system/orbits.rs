@@ -9,6 +9,11 @@ pub(super) const PLANET_ORBIT_MARKERS: usize = 128;
 pub(super) const SATELLITE_ORBIT_MARKERS: usize = 64;
 pub(super) const PLANET_ORBIT_MARKER_RADIUS: f32 = 0.025;
 pub(super) const SATELLITE_ORBIT_MARKER_RADIUS: f32 = 0.020;
+const MOON_DISTANCE_METERS: f64 = 384_400_000.0;
+const SATELLITE_ORBIT_BASE_RADIUS: f32 = 2.2;
+const SATELLITE_ORBIT_COMPRESSION_EXPONENT: f64 = 0.45;
+const SATELLITE_ORBIT_MIN_RADIUS: f32 = 1.45;
+const SATELLITE_ORBIT_MAX_RADIUS: f32 = 5.25;
 
 #[derive(Component, Debug, Clone, Copy)]
 pub(super) struct OrbitMarkerVisual {
@@ -117,7 +122,20 @@ pub(super) fn is_planetary_orbit(body_id: BodyId) -> bool {
 }
 
 pub(super) fn realistic_orbit_radius(orbit: OrbitDefinition) -> f32 {
-    realistic_scene_units_from_meters(orbit.semi_major_axis_meters)
+    if orbit.parent == BodyId::Sun {
+        realistic_scene_units_from_meters(orbit.semi_major_axis_meters)
+    } else {
+        realistic_satellite_orbit_radius(orbit.semi_major_axis_meters)
+    }
+}
+
+pub(super) fn realistic_satellite_orbit_radius(semi_major_axis_meters: f64) -> f32 {
+    let moon_distance_units = (semi_major_axis_meters / MOON_DISTANCE_METERS)
+        .max(0.0)
+        .powf(SATELLITE_ORBIT_COMPRESSION_EXPONENT) as f32
+        * SATELLITE_ORBIT_BASE_RADIUS;
+
+    moon_distance_units.clamp(SATELLITE_ORBIT_MIN_RADIUS, SATELLITE_ORBIT_MAX_RADIUS)
 }
 
 pub(super) fn orbit_marker_count(orbit: OrbitDefinition) -> usize {

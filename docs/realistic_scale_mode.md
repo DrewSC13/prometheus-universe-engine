@@ -1,22 +1,20 @@
-# Realistic Scale Mode
+# Realistic Compressed Scale Mode
 
 ## Objetivo
 
-Eliminar la escala educativa y usar una escala orbital realista proporcional.
+Mantener datos orbitales reales, pero usar una escala visual comprimida para que el sistema sea navegable.
 
 ## Modelo
 
-El render convierte metros físicos a unidades de escena usando una relación fija:
+- El HUD conserva distancias físicas reales.
+- Las posiciones visuales usan la dirección física real del catálogo.
+- Las órbitas planetarias se comprimen con una curva progresiva.
+- Las lunas catalogadas conservan su padre orbital y reciben separación visual local suficiente.
+- No existe modo educativo en este corte.
 
-- 1 AU = 36 unidades de escena.
-- Las posiciones orbitales salen de `body_position_meters`.
-- Las órbitas usan `semi_major_axis_meters` directamente.
-- La Luna mantiene su distancia orbital real proporcional respecto a la Tierra.
+## Criterios visuales
 
-## Nota de navegación
-
-El sistema solar real es muy vacío. Por eso las cámaras generales se alejaron y el enfoque con `G` sigue siendo esencial para inspeccionar cuerpos seleccionados.
-
-## Estado
-
-No existe modo educativo en este corte. La escala orbital publicada es realista y proporcional.
+- Los planetas exteriores no deben quedar perdidos.
+- Júpiter, Saturno, Urano y Neptuno deben seguir siendo visibles en vista general o amplia.
+- Las lunas catalogadas deben seguir visibles alrededor de sus planetas.
+- El enfoque con `G` sigue siendo la herramienta principal de inspección.

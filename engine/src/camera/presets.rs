@@ -61,13 +61,13 @@ pub fn initial_camera_transform() -> Transform {
 pub fn camera_preset_transform(preset: CameraViewPreset) -> Transform {
     match preset {
         CameraViewPreset::Overview => {
-            Transform::from_xyz(0.0, 760.0, 2_450.0).looking_at(Vec3::ZERO, Vec3::Y)
+            Transform::from_xyz(0.0, 90.0, 240.0).looking_at(Vec3::ZERO, Vec3::Y)
         }
         CameraViewPreset::Wide => {
-            Transform::from_xyz(0.0, 1_600.0, 5_200.0).looking_at(Vec3::ZERO, Vec3::Y)
+            Transform::from_xyz(0.0, 160.0, 420.0).looking_at(Vec3::ZERO, Vec3::Y)
         }
         CameraViewPreset::InnerSystem => {
-            Transform::from_xyz(0.0, 95.0, 340.0).looking_at(Vec3::ZERO, Vec3::Y)
+            Transform::from_xyz(0.0, 28.0, 85.0).looking_at(Vec3::ZERO, Vec3::Y)
         }
     }
 }
@@ -106,7 +106,7 @@ mod tests {
     fn wide_camera_preset_covers_realistic_outer_system() {
         let wide = camera_preset_transform(CameraViewPreset::Wide);
 
-        assert!(wide.translation.length() > 5_000.0);
+        assert!(wide.translation.length() > 400.0);
     }
 
     #[test]
