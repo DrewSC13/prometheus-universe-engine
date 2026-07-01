@@ -45,7 +45,7 @@ fn setup(mut commands: Commands) {
         Bloom::NATURAL,
         FreeCamera,
         GlobalPositionComponent::default(),
-        Transform::from_xyz(0.0, 30.0, 115.0).looking_at(Vec3::ZERO, Vec3::Y),
+        initial_camera_transform(),
     ));
 
     commands.spawn((
