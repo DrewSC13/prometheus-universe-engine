@@ -382,3 +382,44 @@ fn compressed_realistic_scale_keeps_earth_inside_jupiter() {
 
     assert!(earth.length() < jupiter.length());
 }
+
+#[test]
+fn solar_surface_animated_scale_stays_controlled() {
+    for index in [0, 7, 39, 128, 377] {
+        let base = super::sun::solar_surface_feature_scale(index);
+        let animated = super::sun::solar_surface_feature_animated_scale(index, 0.75);
+
+        assert!(animated >= base * 0.83);
+        assert!(animated <= base * 1.17);
+    }
+}
+
+#[test]
+fn solar_corona_animated_scale_stays_controlled() {
+    for shell_hint in [0, 1] {
+        for index in [0, 11, 97, 219] {
+            let base = super::sun::solar_corona_marker_base_scale(shell_hint);
+            let animated = super::sun::solar_corona_marker_animated_scale(index, shell_hint, 1.25);
+
+            assert!(animated >= base * 0.79);
+            assert!(animated <= base * 1.21);
+        }
+    }
+}
+
+#[test]
+fn solar_corona_radius_multiplier_stays_subtle() {
+    for shell_hint in [0, 1] {
+        for index in [3, 31, 111, 311] {
+            let multiplier = super::sun::solar_corona_radius_multiplier(index, shell_hint, 2.0);
+
+            assert!((0.95..=1.05).contains(&multiplier));
+        }
+    }
+}
+
+#[test]
+fn solar_fire_visual_density_is_higher_than_base_phase() {
+    assert!(super::sun::SOLAR_SURFACE_FEATURE_COUNT >= 360);
+    assert!(super::sun::SOLAR_CORONA_MARKERS_PER_SHELL >= 400);
+}

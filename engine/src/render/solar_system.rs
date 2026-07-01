@@ -183,31 +183,31 @@ fn spawn_solar_system_visuals(
 
     let solar_surface_materials = [
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.68, 0.14),
-            emissive: LinearRgba::rgb(1.35, 0.58, 0.10),
+            base_color: Color::srgb(1.0, 0.54, 0.08),
+            emissive: LinearRgba::rgb(2.10, 0.72, 0.10),
             ..default()
         }),
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.88, 0.34),
-            emissive: LinearRgba::rgb(1.60, 0.88, 0.18),
+            base_color: Color::srgb(1.0, 0.92, 0.34),
+            emissive: LinearRgba::rgb(2.80, 1.35, 0.26),
             ..default()
         }),
         materials.add(StandardMaterial {
-            base_color: Color::srgb(0.95, 0.32, 0.06),
-            emissive: LinearRgba::rgb(0.90, 0.20, 0.035),
+            base_color: Color::srgb(0.98, 0.24, 0.035),
+            emissive: LinearRgba::rgb(1.65, 0.30, 0.045),
             ..default()
         }),
     ];
 
     let solar_corona_materials = [
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.68, 0.18),
-            emissive: LinearRgba::rgb(1.75, 0.62, 0.12),
+            base_color: Color::srgb(1.0, 0.62, 0.12),
+            emissive: LinearRgba::rgb(2.35, 0.72, 0.10),
             ..default()
         }),
         materials.add(StandardMaterial {
-            base_color: Color::srgb(1.0, 0.86, 0.42),
-            emissive: LinearRgba::rgb(1.20, 0.72, 0.22),
+            base_color: Color::srgb(1.0, 0.86, 0.36),
+            emissive: LinearRgba::rgb(1.65, 0.88, 0.24),
             ..default()
         }),
     ];
@@ -386,7 +386,7 @@ pub(super) fn realistic_scene_units_from_meters(meters: f64) -> f32 {
 
 fn body_emissive_color(body: &CelestialBodyDefinition) -> LinearRgba {
     match body.class {
-        BodyClass::Star => LinearRgba::rgb(2.25, 1.05, 0.22),
+        BodyClass::Star => LinearRgba::rgb(3.20, 1.35, 0.28),
         _ => LinearRgba::BLACK,
     }
 }
